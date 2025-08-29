@@ -30,7 +30,8 @@
     th{font-weight:600;color:#cbd5e1;text-align:left;background:var(--header);position:sticky;top:0;z-index:1}
     tr:last-child td{border-bottom:none}
     .row{display:flex;gap:8px;align-items:center}
-    .dot{width:10px;height:10px;border-radius:999px;background:#6b7280;box-shadow:0 0 0 4px rgba(255,255,255,.04)}
+    /* Enlarged status dot */
+    .dot{width:16px;height:16px;border-radius:999px;background:#6b7280;box-shadow:0 0 0 4px rgba(255,255,255,.04)}
     .dot.go{background:var(--danger);box-shadow:0 0 0 4px rgba(239,68,68,.15)}
     .dot.back{background:var(--ok);box-shadow:0 0 0 4px rgba(22,163,74,.15)}
     .hide-sm{display:table-cell}
@@ -98,7 +99,7 @@
     </div>
   </div>
 
-  <!-- Your Firebase config (embedded) -->
+  <!-- Firebase config (embedded) -->
   <script>
     window.FIREBASE_CONFIG = {
       apiKey: "AIzaSyBElRy7vM3ISQvjgHsjS7m3s4Mdozy5gto",
@@ -111,7 +112,7 @@
     };
   </script>
 
-  <!-- Firebase SDK (compat builds for plain HTML) -->
+  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
 
@@ -206,20 +207,21 @@
 
     async function onGo(name){
       const nowIso = new Date().toISOString();
+      // update UI state immediately to ensure "Thời điểm đi" shows in the correct row/column
+      statusMap.set(name, {goAt: nowIso, backAt: null});
+      renderRow(name);
       if (MODE==='cloud'){ await setCloudStatus(name, {goAt: nowIso, backAt: null}); }
       else { setLocalStatus(name, {goAt: nowIso, backAt: null}); }
-      tick(); // update UI immediately
     }
 
     async function onBack(name){
       const nowIso = new Date().toISOString();
+      const cur = statusMap.get(name) || getLocalStatus(name);
+      // update UI state immediately
+      statusMap.set(name, {goAt: cur.goAt || null, backAt: nowIso});
+      renderRow(name);
       if (MODE==='cloud'){ await setCloudStatus(name, {backAt: nowIso}); }
-      else {
-        const cur = getLocalStatus(name);
-        cur.backAt = nowIso;
-        setLocalStatus(name, cur);
-      }
-      tick(); // update UI immediately
+      else { setLocalStatus(name, {goAt: cur.goAt || null, backAt: nowIso}); }
     }
 
     function renderTable(){
@@ -360,7 +362,7 @@
     $('#nextWeek').addEventListener('click', ()=>{ monday.setDate(monday.getDate()+7); renderWeek(); });
     $('#thisWeek').addEventListener('click', ()=>{ monday = getMonday(new Date()); renderWeek(); });
     $('#clearWeek').addEventListener('click', ()=>{
-      if (!confirm('Xoá ghi chú tuần này trên THIẾT BỊ NÀY?')) return;
+      if (!confirm('Xóa ghi chú tuần này trên THIẾT BỊ NÀY?')) return;
       const prefix = `week:${ymd(monday)}:`;
       Object.keys(localStorage).forEach(k=>{ if (k.startsWith(prefix)) localStorage.removeItem(k); });
       renderWeek();
