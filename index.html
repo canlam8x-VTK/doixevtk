@@ -30,34 +30,37 @@
     th{font-weight:600;color:#cbd5e1;text-align:left;background:var(--header);position:sticky;top:0;z-index:1}
     tr:last-child td{border-bottom:none}
     .row{display:flex;gap:8px;align-items:center}
-    /* Larger dot, text-hidden to avoid accidental text showing inside the dot */
+    /* Status dot */
     .dot{width:18px;height:18px;border-radius:999px;background:#6b7280;box-shadow:0 0 0 4px rgba(255,255,255,.04); display:inline-block; overflow:hidden; text-indent:-9999px}
-    .dot.go{background:var(--danger);box-shadow:0 0 0 4px rgba(239,68,68,.15)}
-    .dot.back{background:var(--ok);box-shadow:0 0 0 4px rgba(22,163,74,.15)}
+    .dot.going{background:var(--danger);box-shadow:0 0 0 4px rgba(239,68,68,.15)}
+    .dot.backed{background:var(--ok);box-shadow:0 0 0 4px rgba(22,163,74,.15)}
     .hide-sm{display:table-cell}
     @media (max-width:780px){ .hide-sm{display:none} }
     /* WEEK GRID */
     .scroll-x{overflow:auto}
     .week-grid{width:100%;border-collapse:separate;border-spacing:0}
     .week-grid th,.week-grid td{border:1px solid var(--line2);padding:0;vertical-align:top}
-    .week-grid th{background:var(--header)}
-    .day-head{padding:10px}
+    .week-grid th{background:var(--header); text-align:center; font-size:14px; font-weight:700; white-space:nowrap;}
+    .day-head{padding:8px}
     .day-name{font-weight:700}
     .day-date{color:#9fb0d1}
-    .day-cell{min-width:240px;min-height:260px;background:#0d1431}
+    /* Smaller cells as requested */
+    .day-cell{min-width:220px;min-height:140px; padding:6px; background:#0d1431}
     .day-cell.past{background:var(--past)}
     .day-cell.today{background:var(--today); outline:2px solid #2a3a74}
     .cell-wrap{display:grid;grid-template-columns:1fr 1fr;gap:0;border-top:1px dashed rgba(255,255,255,.06)}
-    .cell-half{padding:10px}
-    .half-title{font-size:12px;color:#a6b0c3;margin:0 0 8px}
-    .line{border:1px dashed var(--line2);border-radius:8px;padding:10px;min-height:36px;margin-bottom:8px;background:#0b1433}
+    .cell-half{padding:6px}
+    .half-title{font-size:11px;color:#a6b0c3;margin:0 0 6px}
+    .line{border:1px dashed var(--line2);border-radius:8px;padding:8px;min-height:24px;margin-bottom:6px;background:#0b1433;font-size:12px}
     .line[contenteditable="true"]{outline:none}
+    /* Driver tag inside each cell */
+    .driver-tag{font-size:11px; color:#9aa3b2; text-align:center; margin-bottom:4px}
   </style>
 </head>
 <body>
   <div class="wrap">
     <h1>✅ Quản lý công tác lái xe</h1>
-    <div class="sub">Bảng 1: Trạng thái đi/về theo thời gian thực (tự cập nhật mỗi 1 phút). Bảng 2: Theo dõi tuần (Sáng/Chiều, mỗi buổi 2 dòng, mọi người cùng nhìn thấy nếu bật Firestore).</div>
+    <div class="sub">Bảng 1: Trạng thái đi/về theo thời gian thực (tự cập nhật mỗi 1 phút). Bảng 2: Theo dõi tuần (ô nhỏ gọn hơn, hiển thị tên lái xe ngay trong từng ô).</div>
 
     <!-- STATUS BOARD -->
     <div class="card">
@@ -165,49 +168,47 @@
       return statusDoc(name).set({...patch, updatedAt: firebase.firestore.FieldValue.serverTimestamp()}, {merge:true});
     }
 
-    // Safe helper to get cell by id
-    function cellId(prefix, name){ return `${prefix}-${slug(name)}`; }
+    // Build a row with column hooks
+    function buildRow(name){
+      const id = slug(name);
+      const tr = document.createElement('tr');
+      tr.dataset.id = id;
+      tr.innerHTML = `
+        <td><div class="row"><span class="dot" aria-hidden="true"></span><b class="driver"></b></div></td>
+        <td class="state">Chưa đi</td>
+        <td class="go-time hide-sm">-</td>
+        <td class="back-time hide-sm">-</td>
+        <td class="dur-time hide-sm">-</td>
+        <td>
+          <div class="row">
+            <button class="btn btn-go act-go">Đi công tác</button>
+            <button class="btn btn-back act-back">Về công ty</button>
+          </div>
+        </td>`;
+      $('.driver', tr).textContent = name;
+      $('.act-go', tr).addEventListener('click', ()=> onGo(name));
+      $('.act-back', tr).addEventListener('click', ()=> onBack(name));
+      return tr;
+    }
 
-    // FIXED: renderRow uses dedicated cells (by unique IDs) so time never leaks into driver cell
     function renderRow(name){
       const id = slug(name);
       let tr = $$('tr', tbody).find(r=>r.dataset.id===id);
-      if(!tr){
-        tr = document.createElement('tr');
-        tr.dataset.id = id;
-        tr.innerHTML = `
-          <td><div class="row"><span class="dot" aria-hidden="true"></span><b class="driver"></b></div></td>
-          <td class="state">Chưa đi</td>
-          <td class="hide-sm"><span id="${cellId('go',name)}">-</span></td>     <!-- Thời điểm đi -->
-          <td class="hide-sm"><span id="${cellId('back',name)}">-</span></td>   <!-- Thời điểm về -->
-          <td class="hide-sm"><span id="${cellId('dur',name)}">-</span></td>
-          <td>
-            <div class="row">
-              <button class="btn btn-go act-go">Đi công tác</button>
-              <button class="btn btn-back act-back">Về công ty</button>
-            </div>
-          </td>`;
-        $('.driver', tr).textContent = name;
-        $('.act-go', tr).addEventListener('click', ()=> onGo(name));
-        $('.act-back', tr).addEventListener('click', ()=> onBack(name));
-        tbody.appendChild(tr);
-      }
+      if(!tr){ tr = buildRow(name); tbody.appendChild(tr); }
       const st = statusMap.get(name) || {goAt:null, backAt:null};
       const goAt = st.goAt? new Date(st.goAt): null;
       const backAt = st.backAt? new Date(st.backAt): null;
       const isOut = !!goAt && !backAt;
+      const dot = $('.dot', tr);
+      dot.classList.remove('going','backed');
+      if(isOut) dot.classList.add('going');
+      else if(backAt) dot.classList.add('backed');
 
-      $('.dot', tr).className = `dot ${isOut?'go': (backAt?'back':'')}`;
-      $('.driver', tr).textContent = name; // name ONLY, no time here
+      $('.driver', tr).textContent = name;
       $('.state', tr).textContent = isOut ? 'Đang đi công tác' : (backAt ? 'Đã về công ty' : 'Chưa đi');
-
-      // Write strictly into their columns
-      const goEl = document.getElementById(cellId('go',name));
-      const backEl = document.getElementById(cellId('back',name));
-      const durEl = document.getElementById(cellId('dur',name));
-      if(goEl) goEl.textContent = goAt? fmtDateTime(goAt) : '-';
-      if(backEl) backEl.textContent = backAt? fmtDateTime(backAt) : '-';
-      if(durEl) durEl.textContent = goAt? calcDuration(goAt, backAt || new Date()) : '-';
+      $('.go-time', tr).textContent = goAt? fmtDateTime(goAt) : '-';
+      $('.back-time', tr).textContent = backAt? fmtDateTime(backAt) : '-';
+      $('.dur-time', tr).textContent = goAt? calcDuration(goAt, backAt || new Date()) : '-';
     }
 
     function calcDuration(start, end){
@@ -219,7 +220,6 @@
 
     async function onGo(name){
       const nowIso = new Date().toISOString();
-      // Update state immediately so UI updates correct columns
       statusMap.set(name, {goAt: nowIso, backAt: null});
       renderRow(name);
       if (MODE==='cloud'){ await setCloudStatus(name, {goAt: nowIso, backAt: null}); }
@@ -240,8 +240,9 @@
       DRIVERS.forEach(name=>{
         const st = MODE==='cloud' ? {goAt:null, backAt:null} : getLocalStatus(name);
         statusMap.set(name, st);
-        renderRow(name);
+        tbody.appendChild(buildRow(name));
       });
+      DRIVERS.forEach(renderRow);
     }
 
     function attachCloudStatus(){
@@ -256,16 +257,17 @@
     }
 
     function exportTodayCsv(){
-      const rows = [["Tai_xe","Trang_thai","Thoi_diem_di","Thoi_diem_ve","Thoi_gian_vang(hh:mm)"]];
+      const rows = [["Ngay","Tai_xe","Trang_thai","Thoi_diem_di","Thoi_diem_ve","Thoi_gian_vang(hh:mm)"]];
       DRIVERS.forEach(name=>{
         const id = slug(name);
         const tr = $$('tr', tbody).find(r=>r.dataset.id===id);
         rows.push([
+          todayKey(),
           name,
           $('.state', tr).textContent,
-          document.getElementById(cellId('go',name)).textContent,
-          document.getElementById(cellId('back',name)).textContent,
-          document.getElementById(cellId('dur',name)).textContent
+          $('.go-time', tr).textContent,
+          $('.back-time', tr).textContent,
+          $('.dur-time', tr).textContent
         ]);
       });
       const csv = rows.map(r => r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(',')).join('\n');
@@ -290,7 +292,7 @@
     }
     setInterval(tick, 60*1000);
 
-    // ===== WEEKLY GRID (unchanged) =====
+    // ===== WEEKLY GRID =====
     const weekTable = $('#weekTable');
     const DAYS = ['Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7','Chủ nhật'];
     function getMonday(d){ const t=new Date(d); const w=(t.getDay()+6)%7; t.setDate(t.getDate()-w); t.setHours(0,0,0,0); return t; }
@@ -332,7 +334,15 @@
         DRIVERS.forEach(name=>{
           const td = document.createElement('td');
           td.className = `day-cell ${isToday?'today':(isPast?'past':'')}`;
-          const wrap = document.createElement('div'); wrap.className = 'cell-wrap';
+
+          // driver name tag
+          const driverTag = document.createElement('div');
+          driverTag.className = 'driver-tag';
+          driverTag.textContent = name;
+          td.appendChild(driverTag);
+
+          const wrap = document.createElement('div'); 
+          wrap.className = 'cell-wrap';
 
           const data = MODE==='cloud' ? null : loadCellLocal(name, d);
 
