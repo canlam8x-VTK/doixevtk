@@ -44,23 +44,24 @@
     .day-head{padding:8px}
     .day-name{font-weight:700}
     .day-date{color:#9fb0d1}
-    /* Smaller cells as requested */
-    .day-cell{min-width:220px;min-height:140px; padding:6px; background:#0d1431}
+    /* Smaller cells: less empty space */
+    .day-cell{min-width:220px;min-height:120px; padding:6px; background:#0d1431}
     .day-cell.past{background:var(--past)}
     .day-cell.today{background:var(--today); outline:2px solid #2a3a74}
     .cell-wrap{display:grid;grid-template-columns:1fr 1fr;gap:0;border-top:1px dashed rgba(255,255,255,.06)}
     .cell-half{padding:6px}
     .half-title{font-size:11px;color:#a6b0c3;margin:0 0 6px}
-    .line{border:1px dashed var(--line2);border-radius:8px;padding:8px;min-height:24px;margin-bottom:6px;background:#0b1433;font-size:12px}
+    /* Input lines: smaller box but bigger text */
+    .line{border:1px dashed var(--line2);border-radius:6px;padding:6px;min-height:18px;margin-bottom:4px;background:#0b1433;font-size:15px}
     .line[contenteditable="true"]{outline:none}
     /* Driver tag inside each cell */
-    .driver-tag{font-size:11px; color:#9aa3b2; text-align:center; margin-bottom:4px}
+    .driver-tag{font-size:11px; color:#9aa3b2; text-align:center; margin:2px 0 4px}
   </style>
 </head>
 <body>
   <div class="wrap">
     <h1>✅ Quản lý công tác lái xe</h1>
-    <div class="sub">Bảng 1: Trạng thái đi/về theo thời gian thực (tự cập nhật mỗi 1 phút). Bảng 2: Theo dõi tuần (ô nhỏ gọn hơn, hiển thị tên lái xe ngay trong từng ô).</div>
+    <div class="sub">Bảng 1: Trạng thái đi/về theo thời gian thực (tự cập nhật mỗi 1 phút). Bảng 2: Theo dõi tuần (ô gọn hơn, chữ to rõ; tên lái xe hiển thị trong từng ô).</div>
 
     <!-- STATUS BOARD -->
     <div class="card">
