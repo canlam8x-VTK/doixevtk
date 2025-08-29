@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Đã về công ty</title>
+  <style>
+    :root { --ok: #16a34a; --bg: #0b1020; --card: #141a2f; --muted: #94a3b8; --danger:#ef4444; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"; background: var(--bg); color: #e5e7eb; }
+    .wrap { max-width: 640px; margin: 0 auto; padding: 24px; min-height: 100dvh; display: grid; place-items: center; }
+    .card { width: 100%; background: var(--card); border: 1px solid #243055; border-radius: 16px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,.35); }
+    h1 { margin: 0 0 16px; font-size: 22px; }
+    .row { display: flex; gap: 10px; align-items: center; }
+    input[type="text"] { flex: 1; background: #0f1426; color: #e5e7eb; border: 1px solid #27345f; border-radius: 12px; padding: 12px 14px; outline: none; }
+    input::placeholder { color: #64748b; }
+    .btn { appearance: none; border: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 10px; font-weight: 600; border-radius: 14px; padding: 16px 18px; width: 100%; transition: transform .02s ease-in-out, opacity .2s; }
+    .btn:active { transform: translateY(1px); }
+    .btn-primary { background: #2563eb; color: white; }
+    .btn-ok { background: var(--ok); color: white; }
+    .btn-muted { background: #334155; color: white; }
+    .btn-danger { background: var(--danger); color: white; }
+    .status { margin-top: 16px; border-radius: 12px; padding: 14px; display: flex; align-items: center; gap: 10px; border: 1px dashed rgba(255,255,255,.15); }
+    .dot { width: 12px; height: 12px; border-radius: 999px; background: #9ca3af; }
+    .dot.ok { background: var(--ok); box-shadow: 0 0 0 4px rgba(22,163,74,.2); }
+    .muted { color: var(--muted); font-size: 14px; }
+    .stack { display: grid; gap: 12px; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+    footer { margin-top: 16px; font-size: 12px; color: var(--muted); text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>✅ Xác nhận đã về công ty</h1>
+      <div class="stack">
+        <label class="row" for="driver">
+          <input id="driver" type="text" placeholder="Nhập tên tài xế (VD: Nguyễn Văn A)" autocomplete="name" />
+        </label>
+        <button id="arriveBtn" class="btn btn-primary" aria-live="polite">TÔI ĐÃ VỀ CÔNG TY</button>
+        <div class="grid2">
+          <button id="undoBtn" class="btn btn-muted" title="Chuyển về trạng thái chưa về">Hủy xác nhận</button>
+          <button id="resetBtn" class="btn btn-danger" title="Xóa dữ liệu trong ngày">Xóa dữ liệu hôm nay</button>
+        </div>
+        <div id="status" class="status">
+          <div id="dot" class="dot"></div>
+          <div>
+            <div id="statusText">Chưa xác nhận về.</div>
+            <div id="timeText" class="muted"></div>
+          </div>
+        </div>
+        <div class="hint">Mẹo: nhập tên 1 lần, hệ thống sẽ tự lưu. Dữ liệu được lưu trên thiết bị của bạn và sẽ tự làm mới theo từng ngày.</div>
+      </div>
+      <footer>© Công ty • Dùng tốt trên điện thoại (thêm ra màn hình chính để mở nhanh)</footer>
+    </div>
+  </div>
+
+  <script>
+    // ====== Helpers ======
+    const $ = (id) => document.getElementById(id);
+    const driverInput = $("driver");
+    const arriveBtn = $("arriveBtn");
+    const undoBtn = $("undoBtn");
+    const resetBtn = $("resetBtn");
+    const dot = $("dot");
+    const statusText = $("statusText");
+    const timeText = $("timeText");
+
+    function todayKey() {
+      const now = new Date();
+      // key theo ngày: YYYY-MM-DD
+      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      return d.toISOString().slice(0,10);
+    }
+
+    function storageKey(name) {
+      return `arrive:${todayKey()}:${name.trim().toLowerCase()}`;
+    }
+
+    function setStatus(isArrived, time) {
+      if (isArrived) {
+        dot.classList.add('ok');
+        arriveBtn.className = 'btn btn-ok';
+        arriveBtn.textContent = 'ĐÃ VỀ CÔNG TY';
+        statusText.textContent = 'Đã xác nhận về công ty';
+        timeText.textContent = time ? `Thời điểm xác nhận: ${time}` : '';
+      } else {
+        dot.classList.remove('ok');
+        arriveBtn.className = 'btn btn-primary';
+        arriveBtn.textContent = 'TÔI ĐÃ VỀ CÔNG TY';
+        statusText.textContent = 'Chưa xác nhận về.';
+        timeText.textContent = '';
+      }
+    }
+
+    function formatTime(d) {
+      const pad = (n)=> String(n).padStart(2,'0');
+      return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())} ${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`;
+    }
+
+    function loadInitial() {
+      const savedName = localStorage.getItem('driver:name') || '';
+      driverInput.value = savedName;
+      if (savedName) checkStatus(savedName);
+    }
+
+    function checkStatus(name) {
+      const key = storageKey(name);
+      const item = localStorage.getItem(key);
+      if (item) {
+        const { arrivedAt } = JSON.parse(item);
+        setStatus(true, arrivedAt);
+      } else {
+        setStatus(false);
+      }
+    }
+
+    // ====== Actions ======
+    arriveBtn.addEventListener('click', () => {
+      const name = driverInput.value.trim();
+      if (!name) {
+        alert('Hãy nhập tên tài xế trước khi xác nhận.');
+        driverInput.focus();
+        return;
+      }
+      localStorage.setItem('driver:name', name);
+      const key = storageKey(name);
+      const nowStr = formatTime(new Date());
+      localStorage.setItem(key, JSON.stringify({ arrivedAt: nowStr }));
+      setStatus(true, nowStr);
+      try { navigator.vibrate && navigator.vibrate(50); } catch (_) {}
+    });
+
+    undoBtn.addEventListener('click', () => {
+      const name = driverInput.value.trim();
+      if (!name) return;
+      localStorage.removeItem(storageKey(name));
+      setStatus(false);
+    });
+
+    resetBtn.addEventListener('click', () => {
+      if (!confirm('Xóa tất cả xác nhận của hôm nay trên thiết bị này?')) return;
+      const prefix = `arrive:${todayKey()}:`;
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith(prefix)) localStorage.removeItem(k);
+      }
+      setStatus(false);
+    });
+
+    driverInput.addEventListener('change', (e) => {
+      const name = e.target.value.trim();
+      if (!name) { setStatus(false); return; }
+      localStorage.setItem('driver:name', name);
+      checkStatus(name);
+    });
+
+    // Tự reset theo ngày mới khi mở lại trang
+    window.addEventListener('load', loadInitial);
+  </script>
+</body>
+</html>
