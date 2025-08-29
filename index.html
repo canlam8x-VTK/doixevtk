@@ -44,30 +44,33 @@
     .day-head{padding:6px}
     .day-name{font-weight:700}
     .day-date{color:#9fb0d1}
-    /* Narrow columns (show more days per screen) */
+    /* Narrow columns */
     .day-cell{min-width:80px;min-height:96px; padding:4px; background:#0d1431}
     .day-cell.past{background:var(--past)}
     .day-cell.today{background:var(--today); outline:2px solid #2a3a74}
     .cell-wrap{display:grid;grid-template-columns:1fr 1fr;gap:0;border-top:1px dashed rgba(255,255,255,.06)}
     .cell-half{padding:4px}
     .half-title{font-size:10.5px;color:#a6b0c3;margin:0 0 4px}
-    /* Note boxes: start small & square, auto-grow width with content, keep readable Vietnamese */
+    /* NOTE BOX: horizontal expansion on mobile */
     .line{
       border:1px dashed var(--line2);
       border-radius:6px;
       padding:2px 4px;
-      min-height:24px;        /* square-ish height */
-      min-width:24px;         /* square-ish width */
-      width:fit-content;      /* auto expand horizontally */
-      max-width:100%;         /* but don't overflow the cell */
-      display:inline-block;   /* let it size to content */
+      min-height:24px;
+      min-width:40px;
+      width:fit-content;
+      max-width:100%;
+      display:inline-block;
       background:#0b1433;
       font-size:14.5px;
-      white-space:pre-wrap;   /* proper wrapping & Vietnamese IME friendly */
-      word-break:break-word;
+      line-height:1.6;
+      white-space:nowrap;
+      overflow-x:auto;
+      overflow-y:hidden;
+      -webkit-overflow-scrolling:touch;
     }
     .line[contenteditable="true"]{outline:none}
-    /* Driver tag with only two status colors */
+    /* Driver tag color */
     .driver-tag{font-size:12px; font-weight:700; text-align:center; margin:2px 0 2px}
     .driver-tag.red{ color:#ef4444; }   /* đi công tác */
     .driver-tag.green{ color:#16a34a; } /* đã về / chưa đi */
@@ -76,7 +79,7 @@
 <body>
   <div class="wrap">
     <h1>✅ Quản lý công tác lái xe</h1>
-    <div class="sub">Bảng 1: Trạng thái đi/về theo thời gian thực. Bảng 2: Tên lái xe đổi màu xanh/đỏ theo trạng thái; ô ghi chú khởi đầu <b>vuông nhỏ</b> và <b>tự nở ngang</b> khi gõ chữ (hỗ trợ gõ tiếng Việt mượt, không nhảy con trỏ).</div>
+    <div class="sub">Bảng 1: Trạng thái hoạt động xe theo thời gian thực. Bảng 2: Tên lái xe đổi màu xanh/đỏ; ô ghi chú chạy ngang, tự nở khi gõ — tối ưu điện thoại.</div>
 
     <!-- STATUS BOARD -->
     <div class="card">
@@ -90,11 +93,11 @@
       <table>
         <thead>
           <tr>
-            <th>Tài xế</th>
-            <th>Trạng thái</th>
+            <th>Tên lái xe</th>
+            <th>Trạng thái hoạt động xe</th>
             <th class="hide-sm">Thời điểm đi</th>
             <th class="hide-sm">Thời điểm về</th>
-            <th class="hide-sm">Thời gian vắng</th>
+            <th class="hide-sm">Thời gian đi công tác</th>
             <th>Thao tác</th>
           </tr>
         </thead>
@@ -118,7 +121,7 @@
     </div>
   </div>
 
-  <!-- Firebase config (optional for cloud sync) -->
+  <!-- Firebase config (optional) -->
   <script>
     window.FIREBASE_CONFIG = {
       apiKey: "AIzaSyBElRy7vM3ISQvjgHsjS7m3s4Mdozy5gto",
@@ -273,7 +276,7 @@
     }
 
     function exportTodayCsv(){
-      const rows = [["Ngay","Tai_xe","Trang_thai","Thoi_diem_di","Thoi_diem_ve","Thoi_gian_vang(hh:mm)"]];
+      const rows = [["Ngay","Ten_lai_xe","Trang_thai_hoat_dong_xe","Thoi_diem_di","Thoi_diem_ve","Thoi_gian_di_cong_tac"]];
       DRIVERS.forEach(name=>{
         const id = slug(name);
         const tr = $$('tr', tbody).find(r=>r.dataset.id===id);
@@ -310,11 +313,11 @@
     }
     setInterval(tick, 60*1000);
 
-    // Helper: map current status -> color class (only red/green)
+    // Status color (only red/green)
     function statusColor(name){
       const st = statusMap.get(name) || {goAt:null, backAt:null};
-      if (st.goAt && !st.backAt) return 'red'; // đang đi công tác
-      return 'green';                            // đã về hoặc chưa đi
+      if (st.goAt && !st.backAt) return 'red';
+      return 'green';
     }
 
     function refreshDriverTags(){
@@ -404,7 +407,7 @@
             else saveCellLocal(name, d, payload);
           }, 300);
 
-          // IME-friendly: track composition to avoid cursor jump while typing Vietnamese
+          // IME-friendly (Vietnamese): don't overwrite while composing
           [am1,am2,pm1,pm2].forEach(el=>{
             el._composing = false;
             el.addEventListener('compositionstart', ()=> el._composing = true);
@@ -412,7 +415,7 @@
             el.addEventListener('input', ()=> { if (!el._composing) saveAll(); });
           });
 
-          // Live sync from Firestore, but never overwrite when focused or composing
+          // Firestore live sync, skip when focused
           if (MODE==='cloud'){
             cellDoc(name, d).onSnapshot(snap=>{
               const val = snap.exists ? snap.data() : {am1:'',am2:'',pm1:'',pm2:''};
@@ -441,7 +444,7 @@
       renderWeek(); refreshDriverTags();
     });
     $('#exportWeekCsv').addEventListener('click', ()=>{
-      const rows = [["Ngay","Tai_xe","Buoi","Dong1","Dong2"]];
+      const rows = [["Ngay","Ten_lai_xe","Buoi","Dong1","Dong2"]];
       for(let i=0;i<7;i++){
         const d = new Date(monday); d.setDate(d.getDate()+i);
         const dayStr = ymd(d);
@@ -465,7 +468,7 @@
       renderWeek();
       attachCloudStatus();
       tick();
-      setInterval(tick, 60*1000); // 1-minute refresh
+      setInterval(tick, 60*1000);
     }
     window.addEventListener('load', init);
   </script>
