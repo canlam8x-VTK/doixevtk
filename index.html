@@ -41,7 +41,7 @@
 <body>
   <div class="wrap">
     <h1>✅ Theo dõi thời gian đi công tác / về công ty</h1>
-    <div class="sub">Danh sách 9 tài xế: 1 → 9. Bấm <b>Đi công tác</b> (đỏ) khi rời công ty, bấm <b>Về công ty</b> (xanh) khi đã về.</div>
+    <div class="sub">Danh sách 9 tài xế. Bấm <b>Đi công tác</b> (đỏ) khi rời công ty, bấm <b>Về công ty</b> (xanh) khi đã về.</div>
 
     <div class="card">
       <div class="toolbar">
@@ -55,7 +55,7 @@
       <table>
         <thead>
           <tr>
-            <th>#</th>
+            <th>Tài xế</th>
             <th>Trạng thái</th>
             <th>Thời điểm đi</th>
             <th>Thời điểm về</th>
@@ -71,7 +71,17 @@
 
   <script>
     // ===== Cấu hình tên tài xế =====
-    const DRIVERS = ["1","2","3","4","5","6","7","8","9"]; // có thể đổi thành tên thật sau
+    const DRIVERS = [
+      "Đ/c Luận",
+      "Đ/c Hiền",
+      "Đ/c Trạch",
+      "Đ/c Tùng",
+      "Đ/c Lê Hùng",
+      "Đ/c Nhật",
+      "Đ/c Ngọc",
+      "Đ/c Chiến",
+      "Đ/c Thọ"
+    ];
 
     // ===== Helpers =====
     const $ = (s,root=document)=>root.querySelector(s);
@@ -154,7 +164,6 @@
       const now = new Date();
       const st = getState(id);
       if (!st.goAt){
-        // Nếu chưa bấm đi mà bấm về, vẫn lưu thời điểm về
         st.goAt = null;
       }
       st.backAt = now.toISOString();
