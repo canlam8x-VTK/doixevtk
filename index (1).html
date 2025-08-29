@@ -40,27 +40,30 @@
     .scroll-x{overflow:auto}
     .week-grid{width:100%;border-collapse:separate;border-spacing:0}
     .week-grid th,.week-grid td{border:1px solid var(--line2);padding:0;vertical-align:top}
-    .week-grid th{background:var(--header); text-align:center; font-size:14px; font-weight:700; white-space:nowrap;}
-    .day-head{padding:8px}
+    .week-grid th{background:var(--header); text-align:center; font-size:13px; font-weight:700; white-space:nowrap;}
+    .day-head{padding:6px}
     .day-name{font-weight:700}
     .day-date{color:#9fb0d1}
-    /* Smaller cells as requested */
-    .day-cell{min-width:220px;min-height:140px; padding:6px; background:#0d1431}
+    /* Narrower columns ONLY (keep heights same as before) */
+    .day-cell{min-width:80px;min-height:96px; padding:4px; background:#0d1431}
     .day-cell.past{background:var(--past)}
     .day-cell.today{background:var(--today); outline:2px solid #2a3a74}
     .cell-wrap{display:grid;grid-template-columns:1fr 1fr;gap:0;border-top:1px dashed rgba(255,255,255,.06)}
-    .cell-half{padding:6px}
-    .half-title{font-size:11px;color:#a6b0c3;margin:0 0 6px}
-    .line{border:1px dashed var(--line2);border-radius:8px;padding:8px;min-height:24px;margin-bottom:6px;background:#0b1433;font-size:12px}
+    .cell-half{padding:4px}
+    .half-title{font-size:10.5px;color:#a6b0c3;margin:0 0 4px}
+    /* Input lines: keep vertical size; will auto-fit new narrower width */
+    .line{border:1px dashed var(--line2);border-radius:6px;padding:2px 4px;min-height:12px;margin-bottom:2px;background:#0b1433;font-size:14.5px}
     .line[contenteditable="true"]{outline:none}
-    /* Driver tag inside each cell */
-    .driver-tag{font-size:11px; color:#9aa3b2; text-align:center; margin-bottom:4px}
+    /* Driver tag inside each cell with only two status colors */
+    .driver-tag{font-size:12px; font-weight:700; text-align:center; margin:2px 0 2px}
+    .driver-tag.red{ color:#ef4444; }  /* đi công tác */
+    .driver-tag.green{ color:#16a34a; }/* đã về / chưa đi */
   </style>
 </head>
 <body>
   <div class="wrap">
     <h1>✅ Quản lý công tác lái xe</h1>
-    <div class="sub">Bảng 1: Trạng thái đi/về theo thời gian thực (tự cập nhật mỗi 1 phút). Bảng 2: Theo dõi tuần (ô nhỏ gọn hơn, hiển thị tên lái xe ngay trong từng ô).</div>
+    <div class="sub">Bảng 1: Trạng thái đi/về theo thời gian thực. Bảng 2: Cột ngày **hẹp ngang** để hiển thị nhiều cột hơn, tên lái xe tô màu (đỏ = đang đi, xanh = đã về/ chưa đi).</div>
 
     <!-- STATUS BOARD -->
     <div class="card">
@@ -102,7 +105,7 @@
     </div>
   </div>
 
-  <!-- Firebase config (embedded) -->
+  <!-- Firebase config (embedded for compatibility, still works in LOCAL mode without Firestore) -->
   <script>
     window.FIREBASE_CONFIG = {
       apiKey: "AIzaSyBElRy7vM3ISQvjgHsjS7m3s4Mdozy5gto",
@@ -114,8 +117,6 @@
       measurementId: "G-BL1J774EWD"
     };
   </script>
-
-  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
 
@@ -202,7 +203,7 @@
       const dot = $('.dot', tr);
       dot.classList.remove('going','backed');
       if(isOut) dot.classList.add('going');
-      else if(backAt) dot.classList.add('backed');
+      else dot.classList.add('backed');
 
       $('.driver', tr).textContent = name;
       $('.state', tr).textContent = isOut ? 'Đang đi công tác' : (backAt ? 'Đã về công ty' : 'Chưa đi');
@@ -224,6 +225,7 @@
       renderRow(name);
       if (MODE==='cloud'){ await setCloudStatus(name, {goAt: nowIso, backAt: null}); }
       else { setLocalStatus(name, {goAt: nowIso, backAt: null}); }
+      refreshDriverTags(); // update colors in weekly grid
     }
 
     async function onBack(name){
@@ -233,6 +235,7 @@
       renderRow(name);
       if (MODE==='cloud'){ await setCloudStatus(name, {backAt: nowIso}); }
       else { setLocalStatus(name, {goAt: cur.goAt || null, backAt: nowIso}); }
+      refreshDriverTags(); // update colors in weekly grid
     }
 
     function renderTable(){
@@ -252,6 +255,7 @@
           const data = snap.exists ? snap.data() : {goAt:null, backAt:null};
           statusMap.set(name, {goAt: data.goAt || null, backAt: data.backAt || null});
           renderRow(name);
+          refreshDriverTags();
         });
       });
     }
@@ -282,6 +286,7 @@
       if (!confirm('Xoá dữ liệu hôm nay trên THIẾT BỊ NÀY?')) return;
       Object.keys(localStorage).forEach(k=>{ if(k.startsWith(`status:${todayKey()}:`)) localStorage.removeItem(k); });
       renderTable();
+      refreshDriverTags();
     });
 
     // auto-refresh clock & durations every 1 minute
@@ -289,8 +294,24 @@
       $('#today').textContent = fmtDate(todayStart());
       $('#now').textContent = fmtTime(new Date());
       DRIVERS.forEach(renderRow);
+      refreshDriverTags(); // ensure weekly grid colors update
     }
     setInterval(tick, 60*1000);
+
+    // Helper: map current status -> color class (only red/green)
+    function statusColor(name){
+      const st = statusMap.get(name) || {goAt:null, backAt:null};
+      if (st.goAt && !st.backAt) return 'red'; // đang đi công tác
+      return 'green';                            // đã về hoặc chưa đi
+    }
+
+    function refreshDriverTags(){
+      $$('.driver-tag').forEach(tag=>{
+        const name = tag.getAttribute('data-name') || tag.textContent;
+        tag.classList.remove('red','green');
+        tag.classList.add(statusColor(name));
+      });
+    }
 
     // ===== WEEKLY GRID =====
     const weekTable = $('#weekTable');
@@ -335,9 +356,10 @@
           const td = document.createElement('td');
           td.className = `day-cell ${isToday?'today':(isPast?'past':'')}`;
 
-          // driver name tag
+          // driver name tag with live color
           const driverTag = document.createElement('div');
-          driverTag.className = 'driver-tag';
+          driverTag.className = `driver-tag ${statusColor(name)}`;
+          driverTag.setAttribute('data-name', name);
           driverTag.textContent = name;
           td.appendChild(driverTag);
 
@@ -380,14 +402,14 @@
     }
 
     // week controls
-    $('#prevWeek').addEventListener('click', ()=>{ monday.setDate(monday.getDate()-7); renderWeek(); });
-    $('#nextWeek').addEventListener('click', ()=>{ monday.setDate(monday.getDate()+7); renderWeek(); });
-    $('#thisWeek').addEventListener('click', ()=>{ monday = getMonday(new Date()); renderWeek(); });
+    $('#prevWeek').addEventListener('click', ()=>{ monday.setDate(monday.getDate()-7); renderWeek(); refreshDriverTags(); });
+    $('#nextWeek').addEventListener('click', ()=>{ monday.setDate(monday.getDate()+7); renderWeek(); refreshDriverTags(); });
+    $('#thisWeek').addEventListener('click', ()=>{ monday = getMonday(new Date()); renderWeek(); refreshDriverTags(); });
     $('#clearWeek').addEventListener('click', ()=>{
       if (!confirm('Xóa ghi chú tuần này trên THIẾT BỊ NÀY?')) return;
       const prefix = `week:${ymd(monday)}:`;
       Object.keys(localStorage).forEach(k=>{ if (k.startsWith(prefix)) localStorage.removeItem(k); });
-      renderWeek();
+      renderWeek(); refreshDriverTags();
     });
     $('#exportWeekCsv').addEventListener('click', ()=>{
       const rows = [["Ngay","Tai_xe","Buoi","Dong1","Dong2"]];
