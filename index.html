@@ -1,77 +1,422 @@
 <!doctype html>
 <html lang="vi">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta http-equiv="Cache-Control" content="no-store" />
-<title>Quản lý công tác lái xe</title>
-<style>
-:root{
-  --bg:#0b1020; --ink:#e5e7eb; --muted:#9aa3b2; --card:#121936; --line:#263154; --line2:#2b3a6b;
-  --ok:#16a34a; --danger:#ef4444; --today:#0f1f52; --past:#0e1433; --header:#172145;
-}
-body{margin:0;font-family:system-ui,Arial;background:var(--bg);color:var(--ink)}
-.wrap{max-width:1280px;margin:0 auto;padding:18px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:18px}
-table{width:100%;border-collapse:separate;border-spacing:0}
-th,td{padding:6px;border-bottom:1px solid var(--line);font-size:13px}
-th{font-weight:600;color:#cbd5e1;background:var(--header);text-align:center}
-.row{display:flex;align-items:center;gap:6px}
-.dot{width:16px;height:16px;border-radius:50%;background:#6b7280}
-.dot.going{background:var(--danger)}
-.dot.backed{background:var(--ok)}
-.week-grid th,.week-grid td{border:1px solid var(--line2);padding:0}
-.day-cell{min-width:95px;min-height:96px;padding:2px;background:#0d1431}
-.day-cell.today{outline:2px solid #2a3a74}
-.cell-wrap{display:grid;grid-template-columns:1fr 1fr}
-.cell-half{padding:2px}
-.half-title{font-size:10px;color:#a6b0c3}
-.line{border:1px dashed var(--line2);border-radius:4px;padding:2px;min-height:12px;margin-bottom:2px;background:#0b1433;font-size:14px}
-.driver-tag{font-size:12px;font-weight:700;text-align:center;margin:2px}
-.driver-tag.red{color:#ef4444}
-.driver-tag.green{color:#16a34a}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-store" />
+  <title>Quản lý công tác lái xe</title>
+  <style>
+    :root{
+      --bg:#0b1020; --ink:#e5e7eb; --muted:#9aa3b2; --card:#121936; --line:#263154; --line2:#2b3a6b;
+      --ok:#16a34a; --danger:#ef4444; --today:#0f1f52; --past:#0e1433; --header:#172145;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;background:var(--bg);color:var(--ink)}
+    .wrap{max-width:1280px;margin:0 auto;padding:18px}
+    h1{margin:0 0 10px;font-size:22px}
+    .sub{color:var(--muted);font-size:13px;margin:6px 0 14px}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:18px;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+    .toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+    .tag{display:inline-flex;align-items:center;gap:6px;background:#0f162f;border:1px solid var(--line);padding:6px 10px;border-radius:999px;font-size:12px;color:#cbd5e1}
+    .right{margin-left:auto}
+    .clock{font-variant-numeric:tabular-nums}
+    .btn{appearance:none;border:none;border-radius:12px;padding:10px 12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:8px;color:#fff}
+    .btn:active{transform:translateY(1px)}
+    .btn-go{background:var(--danger)}
+    .btn-back{background:var(--ok)}
+    .btn-muted{background:#42506d}
+    table{width:100%;border-collapse:separate;border-spacing:0}
+    th,td{padding:8px;border-bottom:1px solid var(--line);font-size:14px;vertical-align:middle}
+    th{font-weight:600;color:#cbd5e1;text-align:left;background:var(--header);position:sticky;top:0;z-index:1}
+    tr:last-child td{border-bottom:none}
+    .row{display:flex;gap:8px;align-items:center}
+    /* Status dot */
+    .dot{width:18px;height:18px;border-radius:999px;background:#6b7280;box-shadow:0 0 0 4px rgba(255,255,255,.04); display:inline-block; overflow:hidden; text-indent:-9999px}
+    .dot.going{background:var(--danger);box-shadow:0 0 0 4px rgba(239,68,68,.15)}
+    .dot.backed{background:var(--ok);box-shadow:0 0 0 4px rgba(22,163,74,.15)}
+    .hide-sm{display:table-cell}
+    @media (max-width:780px){ .hide-sm{display:none} }
+    /* WEEK GRID */
+    .scroll-x{overflow:auto}
+    .week-grid{width:100%;border-collapse:separate;border-spacing:0}
+    .week-grid th,.week-grid td{border:1px solid var(--line2);padding:0;vertical-align:top}
+    .week-grid th{background:var(--header); text-align:center; font-size:14px; font-weight:700; white-space:nowrap;}
+    .day-head{padding:8px}
+    .day-name{font-weight:700}
+    .day-date{color:#9fb0d1}
+    /* Smaller cells as requested */
+    .day-cell{min-width:220px;min-height:140px; padding:6px; background:#0d1431}
+    .day-cell.past{background:var(--past)}
+    .day-cell.today{background:var(--today); outline:2px solid #2a3a74}
+    .cell-wrap{display:grid;grid-template-columns:1fr 1fr;gap:0;border-top:1px dashed rgba(255,255,255,.06)}
+    .cell-half{padding:6px}
+    .half-title{font-size:11px;color:#a6b0c3;margin:0 0 6px}
+    .line{border:1px dashed var(--line2);border-radius:8px;padding:8px;min-height:24px;margin-bottom:6px;background:#0b1433;font-size:12px}
+    .line[contenteditable="true"]{outline:none}
+    /* Driver tag inside each cell */
+    .driver-tag{font-size:11px; color:#9aa3b2; text-align:center; margin-bottom:4px}
+  </style>
 </head>
 <body>
-<div class="wrap">
-<h1>Quản lý công tác lái xe</h1>
-<div class="card">
-<table><thead><tr><th>Tài xế</th><th>Trạng thái</th><th>Thời điểm đi</th><th>Thời điểm về</th><th>Thời gian vắng</th><th>Thao tác</th></tr></thead>
-<tbody id="tbody"></tbody></table>
-</div>
-<div class="card">
-<div id="weekRange"></div>
-<table class="week-grid" id="weekTable"></table>
-</div>
-</div>
-<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
-<script>
-const DRIVERS=["Đ/c Luận","Đ/c Hiền","Đ/c Trạch","Đ/c Tùng","Đ/c Lê Hùng","Đ/c Nhật","Đ/c Ngọc","Đ/c Chiến","Đ/c Thọ"];
-const $=(s,r=document)=>r.querySelector(s);const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
-const pad=n=>String(n).padStart(2,"0");
-const fmtDate=d=>pad(d.getDate())+"/"+pad(d.getMonth()+1)+"/"+d.getFullYear();
-const fmtTime=d=>pad(d.getHours())+":"+pad(d.getMinutes());
-const fmtDateTime=d=>fmtTime(d)+" "+fmtDate(d);
-const todayStart=()=>{const n=new Date();return new Date(n.getFullYear(),n.getMonth(),n.getDate());}
-const ymd=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
-let statusMap=new Map();
-function calcDuration(start,end){const ms=end-start;if(ms<=0)return"-";const m=Math.floor(ms/60000),h=Math.floor(m/60),mm=m%60;return pad(h)+":"+pad(mm);}
-function statusColor(name){const st=statusMap.get(name)||{goAt:null,backAt:null};if(st.goAt&&!st.backAt)return"red";return"green";}
-function renderRow(name){let tr=$(`#tbody tr[data-id="${name}"]`);if(!tr){tr=document.createElement("tr");tr.dataset.id=name;
-tr.innerHTML=`<td><div class="row"><span class="dot"></span><b>${name}</b></div></td><td class="state"></td><td class="go"></td><td class="back"></td><td class="dur"></td>
-<td><button onclick="onGo('${name}')">Đi</button><button onclick="onBack('${name}')">Về</button></td>`;$("#tbody").appendChild(tr);}
-const st=statusMap.get(name)||{};const go=st.goAt?new Date(st.goAt):null;const back=st.backAt?new Date(st.backAt):null;
-$(".state",tr).textContent=go&&!back?"Đang đi":"Đã về";$(".go",tr).textContent=go?fmtDateTime(go):"-";$(".back",tr).textContent=back?fmtDateTime(back):"-";
-$(".dur",tr).textContent=go?calcDuration(go,back||new Date()):"-";const dot=$(".dot",tr);dot.className="dot "+(go&&!back?"going":"backed");}
-function onGo(name){statusMap.set(name,{goAt:new Date(),backAt:null});renderRow(name);refreshTags();}
-function onBack(name){const cur=statusMap.get(name)||{};statusMap.set(name,{goAt:cur.goAt,backAt:new Date()});renderRow(name);refreshTags();}
-function renderWeek(){weekTable.innerHTML="";const mon=new Date();const w=(mon.getDay()+6)%7;mon.setDate(mon.getDate()-w);let trHead=document.createElement("tr");trHead.innerHTML="<th>Ngày</th>"+DRIVERS.map(n=>"<th>"+n+"</th>").join("");weekTable.appendChild(trHead);
-for(let i=0;i<7;i++){const d=new Date(mon);d.setDate(mon.getDate()+i);let tr=document.createElement("tr");tr.innerHTML="<td>"+fmtDate(d)+"</td>";DRIVERS.forEach(name=>{const td=document.createElement("td");td.className="day-cell";
-const tag=document.createElement("div");tag.className="driver-tag "+statusColor(name);tag.dataset.name=name;tag.textContent=name;td.appendChild(tag);
-const wrap=document.createElement("div");wrap.className="cell-wrap";["Sáng","Chiều"].forEach(b=>{const half=document.createElement("div");half.className="cell-half";half.innerHTML="<div class='half-title'>"+b+"</div>";for(let j=0;j<2;j++){const l=document.createElement("div");l.className="line";l.contentEditable=true;half.appendChild(l);}wrap.appendChild(half);});td.appendChild(wrap);tr.appendChild(td);});weekTable.appendChild(tr);}}
-function refreshTags(){$$(".driver-tag").forEach(tag=>{const n=tag.dataset.name;tag.classList.remove("red","green");tag.classList.add(statusColor(n));});}
-function init(){DRIVERS.forEach(n=>{statusMap.set(n,{goAt:null,backAt:null});renderRow(n);});renderWeek();}
-window.onload=init;
-</script>
-</body></html>
+  <div class="wrap">
+    <h1>✅ Quản lý công tác lái xe</h1>
+    <div class="sub">Bảng 1: Trạng thái đi/về theo thời gian thực (tự cập nhật mỗi 1 phút). Bảng 2: Theo dõi tuần (ô nhỏ gọn hơn, hiển thị tên lái xe ngay trong từng ô).</div>
+
+    <!-- STATUS BOARD -->
+    <div class="card">
+      <div class="toolbar">
+        <span class="tag">Hôm nay: <b id="today"></b></span>
+        <span class="tag clock">Giờ: <span id="now"></span></span>
+        <button id="resetDay" class="btn btn-muted">Xóa dữ liệu hôm nay (máy này)</button>
+        <button id="exportCsv" class="btn btn-muted">Xuất CSV hôm nay</button>
+        <span class="right tag" id="modeTag">Chế độ: Cục bộ</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Tài xế</th>
+            <th>Trạng thái</th>
+            <th class="hide-sm">Thời điểm đi</th>
+            <th class="hide-sm">Thời điểm về</th>
+            <th class="hide-sm">Thời gian vắng</th>
+            <th>Thao tác</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+
+    <!-- WEEKLY GRID -->
+    <div class="card">
+      <div class="toolbar">
+        <span class="tag">Tuần: <b id="weekRange"></b></span>
+        <button id="prevWeek" class="btn btn-muted">◀ Tuần trước</button>
+        <button id="thisWeek" class="btn btn-muted">Tuần này</button>
+        <button id="nextWeek" class="btn btn-muted">Tuần sau ▶</button>
+        <button id="clearWeek" class="btn btn-muted">Xóa trắng tuần (máy này)</button>
+        <button id="exportWeekCsv" class="btn btn-muted">Xuất CSV tuần</button>
+      </div>
+      <div class="scroll-x">
+        <table class="week-grid" id="weekTable"></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase config (embedded) -->
+  <script>
+    window.FIREBASE_CONFIG = {
+      apiKey: "AIzaSyBElRy7vM3ISQvjgHsjS7m3s4Mdozy5gto",
+      authDomain: "lichxe-9384a.firebaseapp.com",
+      projectId: "lichxe-9384a",
+      storageBucket: "lichxe-9384a.firebasestorage.app",
+      messagingSenderId: "1053042148957",
+      appId: "1:1053042148957:web:104a9bfb72240da9b2afb4",
+      measurementId: "G-BL1J774EWD"
+    };
+  </script>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+
+  <script>
+    // ===== CONFIG =====
+    const DRIVERS = ["Đ/c Luận","Đ/c Hiền","Đ/c Trạch","Đ/c Tùng","Đ/c Lê Hùng","Đ/c Nhật","Đ/c Ngọc","Đ/c Chiến","Đ/c Thọ"];
+
+    // ===== UTILS =====
+    const $ = (s,root=document)=>root.querySelector(s);
+    const $$ = (s,root=document)=>Array.from(root.querySelectorAll(s));
+    const pad = n=>String(n).padStart(2,'0');
+    const fmtDate = d=>`${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`;
+    const fmtTime = d=>`${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    const fmtDateTime = d=>`${fmtTime(d)} ${fmtDate(d)}`;
+    const todayStart = ()=>{ const n=new Date(); return new Date(n.getFullYear(), n.getMonth(), n.getDate()); };
+    const ymd = d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+    const todayKey = ()=> ymd(todayStart());
+    const slug = s=> s.normalize('NFD').replace(/[^\w\s-]/g,'').trim().replace(/\s+/g,'_');
+
+    // ===== MODE: local vs cloud =====
+    let MODE = 'local', db=null;
+    if (window.FIREBASE_CONFIG){
+      try {
+        firebase.initializeApp(window.FIREBASE_CONFIG);
+        db = firebase.firestore();
+        MODE = 'cloud';
+      } catch(e){ console.warn('Firebase init failed, fallback to local', e); }
+    }
+    $('#modeTag').textContent = `Chế độ: ${MODE==='cloud'?'Đám mây (Firestore)':'Cục bộ'}`;
+
+    // ===== STATUS BOARD =====
+    const tbody = $('#tbody');
+    const statusMap = new Map(); // name -> {goAt, backAt}
+
+    function getLocalStatus(name){
+      const raw = localStorage.getItem(`status:${todayKey()}:${name}`);
+      return raw? JSON.parse(raw) : {goAt:null, backAt:null};
+    }
+    function setLocalStatus(name, val){
+      localStorage.setItem(`status:${todayKey()}:${name}`, JSON.stringify(val));
+      statusMap.set(name, val);
+      renderRow(name);
+    }
+
+    function statusDoc(name){
+      return db.collection('status').doc(todayKey()).collection('drivers').doc(slug(name));
+    }
+
+    function setCloudStatus(name, patch){
+      return statusDoc(name).set({...patch, updatedAt: firebase.firestore.FieldValue.serverTimestamp()}, {merge:true});
+    }
+
+    // Build a row with column hooks
+    function buildRow(name){
+      const id = slug(name);
+      const tr = document.createElement('tr');
+      tr.dataset.id = id;
+      tr.innerHTML = `
+        <td><div class="row"><span class="dot" aria-hidden="true"></span><b class="driver"></b></div></td>
+        <td class="state">Chưa đi</td>
+        <td class="go-time hide-sm">-</td>
+        <td class="back-time hide-sm">-</td>
+        <td class="dur-time hide-sm">-</td>
+        <td>
+          <div class="row">
+            <button class="btn btn-go act-go">Đi công tác</button>
+            <button class="btn btn-back act-back">Về công ty</button>
+          </div>
+        </td>`;
+      $('.driver', tr).textContent = name;
+      $('.act-go', tr).addEventListener('click', ()=> onGo(name));
+      $('.act-back', tr).addEventListener('click', ()=> onBack(name));
+      return tr;
+    }
+
+    function renderRow(name){
+      const id = slug(name);
+      let tr = $$('tr', tbody).find(r=>r.dataset.id===id);
+      if(!tr){ tr = buildRow(name); tbody.appendChild(tr); }
+      const st = statusMap.get(name) || {goAt:null, backAt:null};
+      const goAt = st.goAt? new Date(st.goAt): null;
+      const backAt = st.backAt? new Date(st.backAt): null;
+      const isOut = !!goAt && !backAt;
+      const dot = $('.dot', tr);
+      dot.classList.remove('going','backed');
+      if(isOut) dot.classList.add('going');
+      else if(backAt) dot.classList.add('backed');
+
+      $('.driver', tr).textContent = name;
+      $('.state', tr).textContent = isOut ? 'Đang đi công tác' : (backAt ? 'Đã về công ty' : 'Chưa đi');
+      $('.go-time', tr).textContent = goAt? fmtDateTime(goAt) : '-';
+      $('.back-time', tr).textContent = backAt? fmtDateTime(backAt) : '-';
+      $('.dur-time', tr).textContent = goAt? calcDuration(goAt, backAt || new Date()) : '-';
+    }
+
+    function calcDuration(start, end){
+      const ms = end - start;
+      if (ms <= 0 || !isFinite(ms)) return '-';
+      const m = Math.floor(ms/60000), h = Math.floor(m/60), mm = m%60;
+      return `${pad(h)}:${pad(mm)}`;
+    }
+
+    async function onGo(name){
+      const nowIso = new Date().toISOString();
+      statusMap.set(name, {goAt: nowIso, backAt: null});
+      renderRow(name);
+      if (MODE==='cloud'){ await setCloudStatus(name, {goAt: nowIso, backAt: null}); }
+      else { setLocalStatus(name, {goAt: nowIso, backAt: null}); }
+    }
+
+    async function onBack(name){
+      const nowIso = new Date().toISOString();
+      const cur = statusMap.get(name) || getLocalStatus(name);
+      statusMap.set(name, {goAt: cur.goAt || null, backAt: nowIso});
+      renderRow(name);
+      if (MODE==='cloud'){ await setCloudStatus(name, {backAt: nowIso}); }
+      else { setLocalStatus(name, {goAt: cur.goAt || null, backAt: nowIso}); }
+    }
+
+    function renderTable(){
+      tbody.innerHTML = '';
+      DRIVERS.forEach(name=>{
+        const st = MODE==='cloud' ? {goAt:null, backAt:null} : getLocalStatus(name);
+        statusMap.set(name, st);
+        tbody.appendChild(buildRow(name));
+      });
+      DRIVERS.forEach(renderRow);
+    }
+
+    function attachCloudStatus(){
+      if (MODE!=='cloud') return;
+      DRIVERS.forEach(name=>{
+        statusDoc(name).onSnapshot(snap=>{
+          const data = snap.exists ? snap.data() : {goAt:null, backAt:null};
+          statusMap.set(name, {goAt: data.goAt || null, backAt: data.backAt || null});
+          renderRow(name);
+        });
+      });
+    }
+
+    function exportTodayCsv(){
+      const rows = [["Ngay","Tai_xe","Trang_thai","Thoi_diem_di","Thoi_diem_ve","Thoi_gian_vang(hh:mm)"]];
+      DRIVERS.forEach(name=>{
+        const id = slug(name);
+        const tr = $$('tr', tbody).find(r=>r.dataset.id===id);
+        rows.push([
+          todayKey(),
+          name,
+          $('.state', tr).textContent,
+          $('.go-time', tr).textContent,
+          $('.back-time', tr).textContent,
+          $('.dur-time', tr).textContent
+        ]);
+      });
+      const csv = rows.map(r => r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(',')).join('\n');
+      const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href=url; a.download=`trang-thai-${todayKey()}.csv`; a.click();
+      setTimeout(()=>URL.revokeObjectURL(url), 2000);
+    }
+
+    $('#exportCsv').addEventListener('click', exportTodayCsv);
+    $('#resetDay').addEventListener('click', ()=>{
+      if (!confirm('Xoá dữ liệu hôm nay trên THIẾT BỊ NÀY?')) return;
+      Object.keys(localStorage).forEach(k=>{ if(k.startsWith(`status:${todayKey()}:`)) localStorage.removeItem(k); });
+      renderTable();
+    });
+
+    // auto-refresh clock & durations every 1 minute
+    function tick(){
+      $('#today').textContent = fmtDate(todayStart());
+      $('#now').textContent = fmtTime(new Date());
+      DRIVERS.forEach(renderRow);
+    }
+    setInterval(tick, 60*1000);
+
+    // ===== WEEKLY GRID =====
+    const weekTable = $('#weekTable');
+    const DAYS = ['Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7','Chủ nhật'];
+    function getMonday(d){ const t=new Date(d); const w=(t.getDay()+6)%7; t.setDate(t.getDate()-w); t.setHours(0,0,0,0); return t; }
+    let monday = getMonday(new Date());
+
+    function cellDoc(driver, date){
+      return db.collection('weeks').doc(ymd(monday)).collection('cells').doc(`${slug(driver)}__${ymd(date)}`);
+    }
+    function loadCellLocal(driver, date){
+      const raw = localStorage.getItem(`week:${ymd(monday)}:${driver}:${ymd(date)}`);
+      return raw? JSON.parse(raw) : {am1:'', am2:'', pm1:'', pm2:''};
+    }
+    function saveCellLocal(driver, date, data){
+      localStorage.setItem(`week:${ymd(monday)}:${driver}:${ymd(date)}`, JSON.stringify(data));
+    }
+
+    function renderWeek(){
+      weekTable.innerHTML='';
+      const sun=new Date(monday); sun.setDate(sun.getDate()+6);
+      $('#weekRange').textContent = `${fmtDate(monday)} → ${fmtDate(sun)}`;
+
+      // header
+      const thead = document.createElement('thead');
+      const htr = document.createElement('tr');
+      const th0 = document.createElement('th'); th0.textContent='Ngày'; htr.appendChild(th0);
+      DRIVERS.forEach(n=>{ const th=document.createElement('th'); th.textContent=n; htr.appendChild(th); });
+      thead.appendChild(htr); weekTable.appendChild(thead);
+
+      // body
+      const tbodyWeek = document.createElement('tbody');
+      for(let i=0;i<7;i++){
+        const d = new Date(monday); d.setDate(d.getDate()+i);
+        const tr = document.createElement('tr');
+        const first = document.createElement('td'); first.innerHTML = `<div class="day-head"><div class="day-name">${DAYS[i]}</div><div class="day-date">${fmtDate(d)}</div></div>`; tr.appendChild(first);
+
+        const isPast = d < todayStart();
+        const isToday = ymd(d) === todayKey();
+
+        DRIVERS.forEach(name=>{
+          const td = document.createElement('td');
+          td.className = `day-cell ${isToday?'today':(isPast?'past':'')}`;
+
+          // driver name tag
+          const driverTag = document.createElement('div');
+          driverTag.className = 'driver-tag';
+          driverTag.textContent = name;
+          td.appendChild(driverTag);
+
+          const wrap = document.createElement('div'); 
+          wrap.className = 'cell-wrap';
+
+          const data = MODE==='cloud' ? null : loadCellLocal(name, d);
+
+          function buildHalf(title, v1, v2){
+            const half = document.createElement('div'); half.className='cell-half';
+            half.innerHTML = `<div class="half-title">${title}</div>`;
+            const l1 = document.createElement('div'); l1.className='line'; l1.contentEditable=true; l1.textContent=v1||''; half.appendChild(l1);
+            const l2 = document.createElement('div'); l2.className='line'; l2.contentEditable=true; l2.textContent=v2||''; half.appendChild(l2);
+            return {half, l1, l2};
+          }
+
+          const {half:am, l1:am1, l2:am2} = buildHalf('Sáng', data?.am1, data?.am2);
+          const {half:pm, l1:pm1, l2:pm2} = buildHalf('Chiều', data?.pm1, data?.pm2);
+          wrap.appendChild(am); wrap.appendChild(pm); td.appendChild(wrap); tr.appendChild(td);
+
+          function saveAll(){
+            const payload = { am1: am1.textContent.trim(), am2: am2.textContent.trim(), pm1: pm1.textContent.trim(), pm2: pm2.textContent.trim() };
+            if (MODE==='cloud') cellDoc(name, d).set({...payload, updatedAt: firebase.firestore.FieldValue.serverTimestamp()}, {merge:true});
+            else saveCellLocal(name, d, payload);
+          }
+          [am1,am2,pm1,pm2].forEach(el=> el.addEventListener('input', saveAll));
+
+          if (MODE==='cloud'){
+            cellDoc(name, d).onSnapshot(snap=>{
+              const val = snap.exists ? snap.data() : {am1:'',am2:'',pm1:'',pm2:''};
+              am1.textContent = val.am1 || ''; am2.textContent = val.am2 || '';
+              pm1.textContent = val.pm1 || ''; pm2.textContent = val.pm2 || '';
+            });
+          }
+        });
+
+        tbodyWeek.appendChild(tr);
+      }
+      weekTable.appendChild(tbodyWeek);
+    }
+
+    // week controls
+    $('#prevWeek').addEventListener('click', ()=>{ monday.setDate(monday.getDate()-7); renderWeek(); });
+    $('#nextWeek').addEventListener('click', ()=>{ monday.setDate(monday.getDate()+7); renderWeek(); });
+    $('#thisWeek').addEventListener('click', ()=>{ monday = getMonday(new Date()); renderWeek(); });
+    $('#clearWeek').addEventListener('click', ()=>{
+      if (!confirm('Xóa ghi chú tuần này trên THIẾT BỊ NÀY?')) return;
+      const prefix = `week:${ymd(monday)}:`;
+      Object.keys(localStorage).forEach(k=>{ if (k.startsWith(prefix)) localStorage.removeItem(k); });
+      renderWeek();
+    });
+    $('#exportWeekCsv').addEventListener('click', ()=>{
+      const rows = [["Ngay","Tai_xe","Buoi","Dong1","Dong2"]];
+      for(let i=0;i<7;i++){
+        const d = new Date(monday); d.setDate(d.getDate()+i);
+        const dayStr = ymd(d);
+        DRIVERS.forEach(name=>{
+          const val = MODE==='cloud' ? null : loadCellLocal(name,d);
+          rows.push([dayStr, name, 'Sang', val?.am1||'', val?.am2||'']);
+          rows.push([dayStr, name, 'Chieu', val?.pm1||'', val?.pm2||'']);
+        });
+      }
+      const csv = rows.map(r => r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(',')).join('\n');
+      const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href=url; a.download=`tuan-${ymd(monday)}.csv`; a.click();
+      setTimeout(()=>URL.revokeObjectURL(url), 2000);
+    });
+
+    // ===== INIT =====
+    function init(){
+      $('#today').textContent = fmtDate(todayStart());
+      renderTable();
+      renderWeek();
+      attachCloudStatus();
+      tick();
+      setInterval(tick, 60*1000); // 1-minute refresh
+    }
+    window.addEventListener('load', init);
+  </script>
+</body>
+</html>
