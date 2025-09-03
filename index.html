@@ -7,17 +7,18 @@
   <title>Quản lý công tác lái xe</title>
   <style>
     :root{
-      --bg:#1a0709;
-      --card:#2b0a0d;
-      --header:#24070a;
-      --today:#3a0d11;
-      --past:#7a1d25;
-      --line:#6b1a21;
-      --line2:#8a2a33;
-      --ink:#ffd54f;
-      --muted:#ffe599;
-      --ok:#16a34a;
-      --danger:#ef4444;
+      /* Requested darker theme + strong past-day color */
+      --bg:#1a0709;       /* darker page background */
+      --card:#2b0a0d;     /* darker card background */
+      --header:#24070a;   /* darker header row */
+      --today:#3a0d11;    /* today highlight */
+      --past:#7a1d25;     /* STRONG red for past days */
+      --line:#6b1a21;     /* borders */
+      --line2:#8a2a33;    /* dashed borders */
+      --ink:#ffd54f;      /* yellow text */
+      --muted:#ffe599;    /* muted yellow */
+      --ok:#16a34a;       /* green for back */
+      --danger:#ef4444;   /* red for go */
     }
     *{box-sizing:border-box}
     body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;background:var(--bg);color:var(--ink)}
@@ -39,16 +40,17 @@
     th{font-weight:700;color:var(--ink);text-align:left;background:var(--header);position:sticky;top:0;z-index:1}
     tr:last-child td{border-bottom:none}
     .row{display:flex;gap:8px;align-items:center}
+    /* Status dot */
     .dot{width:18px;height:18px;border-radius:999px;background:#6b7280; display:inline-block; overflow:hidden; text-indent:-9999px}
     .dot.going{background:var(--danger)}
     .dot.backed{background:var(--ok)}
     .hide-sm{display:table-cell}
     @media (max-width:780px){ .hide-sm{display:none} }
+    /* WEEK GRID */
     .scroll-x{overflow:auto}
     .week-grid{width:100%;border-collapse:separate;border-spacing:0}
     .week-grid th,.week-grid td{border:1px solid var(--line2);padding:0;vertical-align:top}
     .week-grid th{background:var(--header); text-align:center; font-size:13px; font-weight:700; white-space:nowrap;}
-    .hdr-sub{display:block; font-size:11px; color:var(--muted); opacity:.95; margin-top:2px}
     .day-head{padding:6px}
     .day-name{font-weight:700}
     .day-date{color:var(--muted)}
@@ -58,29 +60,31 @@
     .cell-wrap{display:grid;grid-template-columns:1fr 1fr;gap:0;border-top:1px dashed rgba(255,213,79,.25)}
     .cell-half{padding:4px}
     .half-title{font-size:10.5px;color:var(--muted);margin:0 0 4px}
-    /* NOTE BOX: Enter inserts newline, display with pre-wrap */
+    /* NOTE BOX: horizontal expansion on mobile */
     .line{
       border:1px dashed var(--line2);
       border-radius:6px;
       padding:2px 4px;
       min-height:24px;
-      min-width:60px;
+      min-width:40px;
+      width:fit-content;
       max-width:100%;
       display:inline-block;
       background:rgba(0,0,0,.12);
       color:var(--ink);
       font-size:14.5px;
-      line-height:1.5;
-      white-space:pre-wrap;   /* show \n as line break */
-      word-break:break-word;
-      overflow-x:hidden;
-      overflow-y:auto;
+      line-height:1.6;
+      white-space:nowrap;
+      overflow-x:auto;
+      overflow-y:hidden;
       -webkit-overflow-scrolling:touch;
     }
     .line[contenteditable="true"]{outline:none}
+    /* Driver tag color — only two colors */
     .driver-tag{font-size:12px; font-weight:700; text-align:center; margin:2px 0 2px}
     .driver-tag.red{   color:#ef4444; }
     .driver-tag.green{ color:#16a34a; }
+    /* Multi-line columns in status table */
     .col-list{display:flex; flex-direction:column; gap:4px; white-space:nowrap}
     .col-list span{display:inline-block}
   </style>
@@ -88,8 +92,9 @@
 <body>
   <div class="wrap">
     <h1>🚗 Quản lý công tác lái xe</h1>
-    <div class="sub">Bảng 2: ô ghi chú Enter xuống dòng; tiêu đề sau tên lái xe có <b>/ T2/T3/T4/T5/T6/T7/CN</b>.</div>
+    <div class="sub">Nền trang & thẻ đã được hạ tông tối hơn, và các ô ngày đã qua (Bảng 2) tô đỏ đậm hơn cho dễ nhìn.</div>
 
+    <!-- STATUS BOARD (Bảng 1) -->
     <div class="card">
       <div class="toolbar">
         <span class="tag">Hôm nay: <b id="today"></b></span>
@@ -113,6 +118,7 @@
       </table>
     </div>
 
+    <!-- WEEKLY GRID (Bảng 2) -->
     <div class="card">
       <div class="toolbar">
         <span class="tag">Tuần: <b id="weekRange"></b></span>
@@ -127,6 +133,21 @@
       </div>
     </div>
   </div>
+
+  <!-- Firebase config (optional for realtime sync across devices) -->
+  <script>
+    window.FIREBASE_CONFIG = {
+      apiKey: "AIzaSyBElRy7vM3ISQvjgHsjS7m3s4Mdozy5gto",
+      authDomain: "lichxe-9384a.firebaseapp.com",
+      projectId: "lichxe-9384a",
+      storageBucket: "lichxe-9384a.firebasestorage.app",
+      messagingSenderId: "1053042148957",
+      appId: "1:1053042148957:web:104a9bfb72240da9b2afb4",
+      measurementId: "G-BL1J774EWD"
+    };
+  </script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
 
   <script>
     // ===== CONFIG =====
@@ -144,7 +165,7 @@
     const todayKey = ()=> ymd(todayStart());
     const slug = s=> s.normalize('NFD').replace(/[^\w\s-]/g,'').trim().replace(/\s+/g,'_');
 
-    // ===== MODE: local vs cloud (optional) =====
+    // ===== MODE: local vs cloud =====
     let MODE = 'local', db=null;
     if (window.FIREBASE_CONFIG){
       try {
@@ -153,10 +174,9 @@
         MODE = 'cloud';
       } catch(e){ console.warn('Firebase init failed, fallback to local', e); }
     }
-    const modeTagEl = document.getElementById('modeTag');
-    if (modeTagEl) modeTagEl.textContent = `Chế độ: ${MODE==='cloud'?'Đám mây (Firestore)':'Cục bộ'}`;
+    $('#modeTag').textContent = `Chế độ: ${MODE==='cloud'?'Đám mây (Firestore)':'Cục bộ'}`;
 
-    // ===== STATUS BOARD (multi-trips) =====
+    // ===== STATUS BOARD (MULTI-TRIPS) =====
     const tbody = $('#tbody');
     const statusMap = new Map(); // name -> { trips: [{goAt, backAt}] }
 
@@ -345,31 +365,27 @@
       setTimeout(()=>URL.revokeObjectURL(url), 2000);
     }
 
-    const exportBtn = document.getElementById('exportCsv');
-    if (exportBtn) exportBtn.addEventListener('click', exportTodayCsv);
-    const resetBtn = document.getElementById('resetDay');
-    if (resetBtn) resetBtn.addEventListener('click', ()=>{
+    $('#exportCsv').addEventListener('click', exportTodayCsv);
+    $('#resetDay').addEventListener('click', ()=>{
       if (!confirm('Xoá dữ liệu hôm nay trên THIẾT BỊ NÀY?')) return;
       Object.keys(localStorage).forEach(k=>{ if(k.startsWith(`status:${todayKey()}:`)) localStorage.removeItem(k); });
       renderTable();
       refreshDriverTags();
     });
 
+    // Clock & periodic refresh
     function tick(){
-      const now = new Date();
-      const pad = n=>String(n).padStart(2,'0');
-      const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
-      const dateStr = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()}`;
-      const tEl = document.getElementById('now'); if (tEl) tEl.textContent = timeStr;
-      const dEl = document.getElementById('today'); if (dEl) dEl.textContent = dateStr;
+      $('#today').textContent = fmtDate(todayStart());
+      $('#now').textContent = fmtTime(new Date());
       DRIVERS.forEach(renderRow);
       refreshDriverTags();
     }
     setInterval(tick, 60*1000);
 
+    // Status color for week driver tags (only red/green)
     function statusColor(name){
       const st = statusMap.get(name) || {trips: []};
-      return (st.trips.length && st.trips[trips.length-1].goAt && !st.trips[trips.length-1].backAt) ? 'red' : 'green';
+      return (st.trips.length && st.trips[st.trips.length-1].goAt && !st.trips[st.trips.length-1].backAt) ? 'red' : 'green';
     }
     function refreshDriverTags(){
       $$('.driver-tag').forEach(tag=>{
@@ -408,11 +424,7 @@
       const thead = document.createElement('thead');
       const htr = document.createElement('tr');
       const th0 = document.createElement('th'); th0.textContent='Ngày'; htr.appendChild(th0);
-      DRIVERS.forEach(n=>{ 
-        const th=document.createElement('th'); 
-        th.innerHTML = `${n}<span class="hdr-sub">/ T2/T3/T4/T5/T6/T7/CN</span>`;
-        htr.appendChild(th); 
-      });
+      DRIVERS.forEach(n=>{ const th=document.createElement('th'); th.textContent=n; htr.appendChild(th); });
       thead.appendChild(htr); weekTable.appendChild(thead);
 
       // body
@@ -429,6 +441,7 @@
           const td = document.createElement('td');
           td.className = `day-cell ${isToday?'today':(isPast?'past':'')}`;
 
+          // driver name tag with live color
           const driverTag = document.createElement('div');
           driverTag.className = `driver-tag ${statusColor(name)}`;
           driverTag.setAttribute('data-name', name);
@@ -438,7 +451,7 @@
           const wrap = document.createElement('div'); 
           wrap.className = 'cell-wrap';
 
-          const data = loadCellLocal(name, d);
+          const data = MODE==='cloud' ? null : loadCellLocal(name, d);
 
           function buildHalf(title, v1, v2){
             const half = document.createElement('div'); half.className='cell-half';
@@ -452,39 +465,32 @@
           const {half:pm, l1:pm1, l2:pm2} = buildHalf('Chiều', data?.pm1, data?.pm2);
           wrap.appendChild(am); wrap.appendChild(pm); td.appendChild(wrap); tr.appendChild(td);
 
+          // Save function for this cell
           const saveAll = debounce(()=>{
             const payload = { am1: am1.textContent, am2: am2.textContent, pm1: pm1.textContent, pm2: pm2.textContent };
-            saveCellLocal(name, d, payload);
+            if (MODE==='cloud') cellDoc(name, d).set({...payload, updatedAt: firebase.firestore.FieldValue.serverTimestamp()}, {merge:true});
+            else saveCellLocal(name, d, payload);
           }, 300);
 
-          // Enter -> newline; support Vietnamese IME
+          // IME-friendly (Vietnamese): don't overwrite while composing
           [am1,am2,pm1,pm2].forEach(el=>{
             el._composing = false;
             el.addEventListener('compositionstart', ()=> el._composing = true);
             el.addEventListener('compositionend',   ()=> { el._composing = false; saveAll(); });
-            el.addEventListener('keydown', (e)=>{
-              if (e.key === 'Enter'){
-                e.preventDefault();
-                if (document.queryCommandSupported && document.queryCommandSupported('insertText')) {
-                  document.execCommand('insertText', false, '\n');
-                } else {
-                  const sel = window.getSelection();
-                  if (sel && sel.rangeCount){
-                    const range = sel.getRangeAt(0);
-                    const textNode = document.createTextNode('\n');
-                    range.deleteContents();
-                    range.insertNode(textNode);
-                    range.setStartAfter(textNode);
-                    range.setEndAfter(textNode);
-                  } else {
-                    el.textContent += '\n';
-                  }
-                }
-                saveAll();
-              }
-            });
             el.addEventListener('input', ()=> { if (!el._composing) saveAll(); });
           });
+
+          // Firestore live sync, skip when focused
+          if (MODE==='cloud'){
+            cellDoc(name, d).onSnapshot(snap=>{
+              const val = snap.exists ? snap.data() : {am1:'',am2:'',pm1:'',pm2:''};
+              const pairs = [[am1,'am1'],[am2,'am2'],[pm1,'pm1'],[pm2,'pm2']];
+              pairs.forEach(([el,key])=>{
+                if (document.activeElement === el || el._composing) return;
+                if ((el.textContent||'') !== (val[key]||'')) el.textContent = val[key] || '';
+              });
+            });
+          }
         });
 
         tbodyWeek.appendChild(tr);
@@ -493,47 +499,41 @@
     }
 
     // week controls
-    document.addEventListener('click', (e)=>{
-      if (e.target && e.target.id === 'prevWeek'){ monday.setDate(monday.getDate()-7); renderWeek(); refreshDriverTags(); }
-      if (e.target && e.target.id === 'nextWeek'){ monday.setDate(monday.getDate()+7); renderWeek(); refreshDriverTags(); }
-      if (e.target && e.target.id === 'thisWeek'){ monday = getMonday(new Date()); renderWeek(); refreshDriverTags(); }
-      if (e.target && e.target.id === 'clearWeek'){
-        if (!confirm('Xóa ghi chú tuần này trên THIẾT BỊ NÀY?')) return;
-        const prefix = `week:${ymd(monday)}:`;
-        Object.keys(localStorage).forEach(k=>{ if (k.startsWith(prefix)) localStorage.removeItem(k); });
-        renderWeek(); refreshDriverTags();
+    $('#prevWeek').addEventListener('click', ()=>{ monday.setDate(monday.getDate()-7); renderWeek(); refreshDriverTags(); });
+    $('#nextWeek').addEventListener('click', ()=>{ monday.setDate(monday.getDate()+7); renderWeek(); refreshDriverTags(); });
+    $('#thisWeek').addEventListener('click', ()=>{ monday = getMonday(new Date()); renderWeek(); refreshDriverTags(); });
+    $('#clearWeek').addEventListener('click', ()=>{
+      if (!confirm('Xóa ghi chú tuần này trên THIẾT BỊ NÀY?')) return;
+      const prefix = `week:${ymd(monday)}:`;
+      Object.keys(localStorage).forEach(k=>{ if (k.startsWith(prefix)) localStorage.removeItem(k); });
+      renderWeek(); refreshDriverTags();
+    });
+    $('#exportWeekCsv').addEventListener('click', ()=>{
+      const rows = [["Ngay","Ten_lai_xe","Buoi","Dong1","Dong2"]];
+      for(let i=0;i<7;i++){
+        const d = new Date(monday); d.setDate(d.getDate()+i);
+        const dayStr = ymd(d);
+        DRIVERS.forEach(name=>{
+          const val = MODE==='cloud' ? null : loadCellLocal(name,d);
+          rows.push([dayStr, name, 'Sang', val?.am1||'', val?.am2||'']);
+          rows.push([dayStr, name, 'Chieu', val?.pm1||'', val?.pm2||'']);
+        });
       }
-      if (e.target && e.target.id === 'exportWeekCsv'){
-        const rows = [["Ngay","Ten_lai_xe","Buoi","Dong1","Dong2"]];
-        for(let i=0;i<7;i++){
-          const d = new Date(monday); d.setDate(d.getDate()+i);
-          const dayStr = ymd(d);
-          DRIVERS.forEach(name=>{
-            const val = loadCellLocal(name,d);
-            rows.push([dayStr, name, 'Sang', val?.am1||'', val?.am2||'']);
-            rows.push([dayStr, name, 'Chieu', val?.pm1||'', val?.pm2||'']);
-          });
-        }
-        const csv = rows.map(r => r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(',')).join('\n');
-        const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a'); a.href=url; a.download=`tuan-${ymd(monday)}.csv`; a.click();
-        setTimeout(()=>URL.revokeObjectURL(url), 2000);
-      }
+      const csv = rows.map(r => r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(',')).join('\n');
+      const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href=url; a.download=`tuan-${ymd(monday)}.csv`; a.click();
+      setTimeout(()=>URL.revokeObjectURL(url), 2000);
     });
 
     // ===== INIT =====
     function init(){
-      const now = new Date();
-      const pad = n=>String(n).padStart(2,'0');
-      const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
-      const dateStr = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()}`;
-      const tEl = document.getElementById('now'); if (tEl) tEl.textContent = timeStr;
-      const dEl = document.getElementById('today'); if (dEl) dEl.textContent = dateStr;
-
+      $('#today').textContent = fmtDate(todayStart());
       renderTable();
       renderWeek();
-      setInterval(()=>{ DRIVERS.forEach(renderRow); refreshDriverTags(); }, 60*1000);
+      attachCloudStatus();
+      tick();
+      setInterval(tick, 60*1000);
     }
     window.addEventListener('load', init);
   </script>
