@@ -57,23 +57,22 @@
     .cell-wrap{display:grid;grid-template-columns:1fr 1fr;gap:0;border-top:1px dashed rgba(255,213,79,.25)}
     .cell-half{padding:4px}
     .half-title{font-size:10.5px;color:var(--muted);margin:0 0 4px}
-    /* Ô ghi chú: ban đầu nhỏ gọn, chỉ giãn ngang khi nhập, không xuống dòng */
     .line{
       border:1px dashed var(--line2);
       border-radius:6px;
       padding:2px 4px;
       min-height:24px;
-      min-width:40px;        /* nhỏ hơn */
-      max-width:100px;       /* giới hạn ban đầu để bảng gọn */
-      width:fit-content;     /* giãn theo nội dung */
+      min-width:80px;
+      width:fit-content;
+      max-width:none;
       display:inline-block;
       background:rgba(0,0,0,.12);
       color:var(--ink);
       font-size:14.5px;
       line-height:1.5;
-      white-space:nowrap;    /* không xuống dòng */
+      white-space:nowrap;
       word-break:keep-all;
-      overflow-x:auto;       /* chữ dài thì kéo ngang */
+      overflow-x:auto;
       overflow-y:hidden;
       -webkit-overflow-scrolling:touch;
     }
@@ -88,7 +87,7 @@
 <body>
   <div class="wrap">
     <h1>🚗 Quản lý công tác lái xe</h1>
-    <div class="sub">Bảng 2: ô ghi chú ban đầu nhỏ gọn, khi điền sẽ giãn ngang; mỗi ô hiển thị <b>Tên đ/c / Thứ</b> đúng theo hàng ngang (T2..CN).</div>
+    <div class="sub">Bảng 2: ô ghi chú 1 dòng, tự giãn ngang; mỗi ô hiển thị <b>Tên đ/c / Thứ</b> đúng với hàng ngang (T2..CN).</div>
 
     <!-- BẢNG 1 -->
     <div class="card">
@@ -376,7 +375,7 @@
 
     function statusColor(name){
       const st = statusMap.get(name) || {trips: []};
-      return (st.trips.length && st.trips[trips.length-1].goAt && !st.trips[st.trips.length-1].backAt) ? 'red' : 'green';
+      return (st.trips.length && st.trips[st.trips.length-1].goAt && !st.trips[st.trips.length-1].backAt) ? 'red' : 'green';
     }
     function refreshDriverTags(){
       $$('.driver-tag').forEach(tag=>{
