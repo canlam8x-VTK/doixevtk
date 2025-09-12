@@ -62,17 +62,18 @@
       border-radius:6px;
       padding:2px 4px;
       min-height:24px;
-      min-width:60px;
-      max-width:100%;
+      min-width:80px;
+      width:fit-content;
+      max-width:none;
       display:inline-block;
       background:rgba(0,0,0,.12);
       color:var(--ink);
       font-size:14.5px;
       line-height:1.5;
-      white-space:pre-wrap;
-      word-break:break-word;
-      overflow-x:hidden;
-      overflow-y:auto;
+      white-space:nowrap;
+      word-break:keep-all;
+      overflow-x:auto;
+      overflow-y:hidden;
       -webkit-overflow-scrolling:touch;
     }
     .line[contenteditable="true"]{outline:none}
@@ -86,7 +87,7 @@
 <body>
   <div class="wrap">
     <h1>🚗 Quản lý công tác lái xe</h1>
-    <div class="sub">Bảng 2: giữ nguyên ghi chú; trong mỗi ô hiển thị <b>Tên đ/c / Thứ</b> đúng với hàng ngang (T2..CN).</div>
+    <div class="sub">Bảng 2: ô ghi chú 1 dòng, tự giãn ngang; mỗi ô hiển thị <b>Tên đ/c / Thứ</b> đúng với hàng ngang (T2..CN).</div>
 
     <!-- BẢNG 1 -->
     <div class="card">
@@ -460,31 +461,13 @@
             else saveCellLocal(name, d, payload);
           }, 300);
 
-          // GIỮ NGUYÊN hành vi ghi chú (Enter xuống dòng đã hoạt động)
+          // Ghi chú: KHÔNG xuống dòng nữa, chặn Enter
           [am1,am2,pm1,pm2].forEach(el=>{
             el._composing = false;
             el.addEventListener('compositionstart', ()=> el._composing = true);
             el.addEventListener('compositionend',   ()=> { el._composing = false; saveAll(); });
             el.addEventListener('keydown', (e)=>{
-              if (e.key === 'Enter'){
-                e.preventDefault();
-                if (document.queryCommandSupported && document.queryCommandSupported('insertText')) {
-                  document.execCommand('insertText', false, '\n');
-                } else {
-                  const sel = window.getSelection();
-                  if (sel && sel.rangeCount){
-                    const range = sel.getRangeAt(0);
-                    const textNode = document.createTextNode('\n');
-                    range.deleteContents();
-                    range.insertNode(textNode);
-                    range.setStartAfter(textNode);
-                    range.setEndAfter(textNode);
-                  } else {
-                    el.textContent += '\n';
-                  }
-                }
-                saveAll();
-              }
+              if (e.key === 'Enter'){ e.preventDefault(); return false; }
             });
             el.addEventListener('input', ()=> { if (!el._composing) saveAll(); });
           });
