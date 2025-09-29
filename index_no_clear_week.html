@@ -1,0 +1,539 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-store" />
+  <title>Quản lý công tác lái xe</title>
+  <style>
+    :root{
+      --bg:#1a0709;
+      --card:#2b0a0d;
+      --header:#24070a;
+      --today:#3a0d11;
+      --past:#7a1d25;
+      --line:#6b1a21;
+      --line2:#8a2a33;
+      --ink:#ffd54f;
+      --muted:#ffe599;
+      --ok:#16a34a;
+      --danger:#ef4444;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;background:var(--bg);color:var(--ink)}
+    .wrap{max-width:1280px;margin:0 auto;padding:18px}
+    h1{margin:0 0 10px;font-size:22px}
+    .sub{color:var(--muted);font-size:13px;margin:6px 0 14px}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:18px;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+    .toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+    .tag{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.04);border:1px solid var(--line);padding:6px 10px;border-radius:999px;font-size:12px;color:var(--ink)}
+    .right{margin-left:auto}
+    .clock{font-variant-numeric:tabular-nums}
+    .btn{appearance:none;border:none;border-radius:12px;padding:10px 12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:8px;color:var(--ink)}
+    .btn:active{transform:translateY(1px)}
+    .btn-go{background:#a21922}
+    .btn-back{background:#147a33}
+    .btn-muted{background:#3a0e12}
+    table{width:100%;border-collapse:separate;border-spacing:0}
+    th,td{padding:8px;border-bottom:1px solid var(--line);font-size:14px;vertical-align:top}
+    th{font-weight:700;color:var(--ink);text-align:left;background:var(--header);position:sticky;top:0;z-index:1}
+    tr:last-child td{border-bottom:none}
+    .row{display:flex;gap:8px;align-items:center}
+    .dot{width:18px;height:18px;border-radius:999px;background:#6b7280;display:inline-block;overflow:hidden;text-indent:-9999px}
+    .dot.going{background:var(--danger)}
+    .dot.backed{background:var(--ok)}
+    .hide-sm{display:table-cell}
+    @media (max-width:780px){ .hide-sm{display:none} }
+    .scroll-x{overflow:auto}
+    .week-grid{width:100%;border-collapse:separate;border-spacing:0}
+    .week-grid th,.week-grid td{border:1px solid var(--line2);padding:0;vertical-align:top}
+    .week-grid th{background:var(--header); text-align:center; font-size:13px; font-weight:700; white-space:nowrap;}
+    .day-head{padding:6px}
+    .day-name{font-weight:700}
+    .day-date{color:var(--muted)}
+    .day-cell{min-width:80px;min-height:96px; padding:4px; background:#2c0a0e}
+    .day-cell.past{background:var(--past); font-weight:600; color:var(--ink)}
+    .day-cell.today{background:var(--today); outline:2px solid rgba(255,213,79,.25)}
+    .cell-wrap{display:grid;grid-template-columns:1fr 1fr;gap:0;border-top:1px dashed rgba(255,213,79,.25)}
+    .cell-half{padding:4px}
+    .half-title{font-size:10.5px;color:var(--muted);margin:0 0 4px}
+    /* Ô ghi chú: ban đầu nhỏ gọn, chỉ giãn ngang khi nhập, không xuống dòng */
+    .line{
+      border:1px dashed var(--line2);
+      border-radius:6px;
+      padding:2px 4px;
+      min-height:24px;
+      min-width:40px;        /* nhỏ hơn */
+      max-width:100px;       /* giới hạn ban đầu để bảng gọn */
+      width:fit-content;     /* giãn theo nội dung */
+      display:inline-block;
+      background:rgba(0,0,0,.12);
+      color:var(--ink);
+      font-size:14.5px;
+      line-height:1.5;
+      white-space:nowrap;    /* không xuống dòng */
+      word-break:keep-all;
+      overflow-x:auto;       /* chữ dài thì kéo ngang */
+      overflow-y:hidden;
+      -webkit-overflow-scrolling:touch;
+    }
+    .line[contenteditable="true"]{outline:none}
+    .driver-tag{font-size:12px; font-weight:700; text-align:center; margin:2px 0 2px}
+    .driver-tag.red{   color:#ef4444; }
+    .driver-tag.green{ color:#16a34a; }
+    .col-list{display:flex; flex-direction:column; gap:4px; white-space:nowrap}
+    .col-list span{display:inline-block}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>🚗 Quản lý công tác lái xe</h1>
+    <div class="sub">Bảng 2: ô ghi chú ban đầu nhỏ gọn, khi điền sẽ giãn ngang; mỗi ô hiển thị <b>Tên đ/c / Thứ</b> đúng theo hàng ngang (T2..CN).</div>
+
+    <!-- BẢNG 1 -->
+    <div class="card">
+      <div class="toolbar">
+        <span class="tag">Hôm nay: <b id="today"></b></span>
+        <span class="tag clock">Giờ: <span id="now"></span></span>
+        <button id="resetDay" class="btn btn-muted">Xóa dữ liệu hôm nay (máy này)</button>
+        <button id="exportCsv" class="btn btn-muted">Xuất CSV hôm nay</button>
+        <span class="right tag" id="modeTag">Chế độ: Cục bộ</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Tên lái xe</th>
+            <th>Trạng thái hoạt động xe</th>
+            <th class="hide-sm">Thời điểm đi</th>
+            <th class="hide-sm">Thời điểm về</th>
+            <th class="hide-sm">Thời gian đi công tác</th>
+            <th>Thao tác</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+
+    <!-- BẢNG 2 -->
+    <div class="card">
+      <div class="toolbar">
+        <span class="tag">Tuần: <b id="weekRange"></b></span>
+        <button id="prevWeek" class="btn btn-muted">◀ Tuần trước</button>
+        <button id="thisWeek" class="btn btn-muted">Tuần này</button>
+        <button id="nextWeek" class="btn btn-muted">Tuần sau ▶</button>
+        <button id="exportWeekCsv" class="btn btn-muted">Xuất CSV tuần</button>
+      </div>
+      <div class="scroll-x">
+        <table class="week-grid" id="weekTable"></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase config -->
+  <script>
+    window.FIREBASE_CONFIG = {
+      apiKey: "AIzaSyBElRy7vM3ISQvjgHsjS7m3s4Mdozy5gto",
+      authDomain: "lichxe-9384a.firebaseapp.com",
+      projectId: "lichxe-9384a",
+      storageBucket: "lichxe-9384a.firebasestorage.app",
+      messagingSenderId: "1053042148957",
+      appId: "1:1053042148957:web:104a9bfb72240da9b2afb4",
+      measurementId: "G-BL1J774EWD"
+    };
+  </script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+
+  <script>
+    // ===== CONFIG =====
+    const DRIVERS = ["Đ/c Luận","Đ/c Hiền","Đ/c Trạch","Đ/c Tùng","Đ/c Lê Hùng","Đ/c Nhật","Đ/c Ngọc","Đ/c Chiến","Đ/c Thọ"];
+
+    // ===== UTILS =====
+    const $ = (s,root=document)=>root.querySelector(s);
+    const $$ = (s,root=document)=>Array.from(root.querySelectorAll(s));
+    const pad = n=>String(n).padStart(2,'0');
+    const fmtDate = d=>`${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`;
+    const fmtTime = d=>`${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    const fmtDateTime = d=>`${fmtTime(d)} ${fmtDate(d)}`;
+    const todayStart = ()=>{ const n=new Date(); return new Date(n.getFullYear(), n.getMonth(), n.getDate()); };
+    const ymd = d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+    const todayKey = ()=> ymd(todayStart());
+    const slug = s=> s.normalize('NFD').replace(/[^\w\s-]/g,'').trim().replace(/\s+/g,'_');
+
+    // ===== MODE: local vs cloud =====
+    let MODE = 'local', db=null;
+    try { firebase.initializeApp(window.FIREBASE_CONFIG); db = firebase.firestore(); MODE = 'cloud'; }
+    catch(e){ console.warn('Firebase init failed, fallback to local', e); }
+    const modeTagEl = document.getElementById('modeTag');
+    if (modeTagEl) modeTagEl.textContent = `Chế độ: ${MODE==='cloud'?'Đám mây (Firestore)':'Cục bộ'}`;
+
+    // ===== BẢNG 1 =====
+    const tbody = $('#tbody');
+    const statusMap = new Map(); // name -> { trips: [{goAt, backAt}] }
+
+    function normalizeStatus(obj){
+      if (!obj) return {trips: []};
+      if (obj.trips && Array.isArray(obj.trips)) return {trips: obj.trips};
+      const goAt = obj.goAt || null, backAt = obj.backAt || null;
+      if (goAt || backAt) return {trips: [{goAt, backAt: backAt || null}]};
+      return {trips: []};
+    }
+
+    function getLocalStatus(name){
+      const raw = localStorage.getItem(`status:${todayKey()}:${name}`);
+      return normalizeStatus(raw? JSON.parse(raw) : {trips: []});
+    }
+    function setLocalStatus(name, val){
+      localStorage.setItem(`status:${todayKey()}:${name}`, JSON.stringify(val));
+      statusMap.set(name, val);
+      renderRow(name);
+    }
+
+    function statusDoc(name){
+      return db.collection('status').doc(todayKey()).collection('drivers').doc(slug(name));
+    }
+
+    function buildRow(name){
+      const id = slug(name);
+      const tr = document.createElement('tr');
+      tr.dataset.id = id;
+      tr.innerHTML = `
+        <td><div class="row"><span class="dot" aria-hidden="true"></span><b class="driver"></b></div></td>
+        <td class="state">Chưa đi</td>
+        <td class="go-time hide-sm"><div class="col-list"></div></td>
+        <td class="back-time hide-sm"><div class="col-list"></div></td>
+        <td class="dur-time hide-sm"><div class="col-list"></div></td>
+        <td>
+          <div class="row">
+            <button class="btn btn-go act-go">Đi công tác</button>
+            <button class="btn btn-back act-back">Về công ty</button>
+          </div>
+        </td>`;
+      $('.driver', tr).textContent = name;
+      $('.act-go', tr).addEventListener('click', ()=> onGo(name));
+      $('.act-back', tr).addEventListener('click', ()=> onBack(name));
+      return tr;
+    }
+
+    function isOutNow(st){
+      const trips = st.trips || [];
+      return trips.length && trips[trips.length-1].goAt && !trips[trips.length-1].backAt;
+    }
+
+    function renderRow(name){
+      const id = slug(name);
+      let tr = $$('tr', tbody).find(r=>r.dataset.id===id);
+      if(!tr){ tr = buildRow(name); tbody.appendChild(tr); }
+      const st = statusMap.get(name) || {trips: []};
+      const trips = st.trips || [];
+
+      const dot = $('.dot', tr);
+      dot.classList.remove('going','backed');
+      if(isOutNow(st)) dot.classList.add('going'); else dot.classList.add('backed');
+
+      $('.driver', tr).textContent = name;
+      $('.state', tr).textContent = isOutNow(st) ? 'Đang đi công tác' : (trips.length ? 'Đã về công ty' : 'Chưa đi');
+
+      const goCol = $('.go-time .col-list', tr);
+      const backCol = $('.back-time .col-list', tr);
+      const durCol = $('.dur-time .col-list', tr);
+      goCol.innerHTML = backCol.innerHTML = durCol.innerHTML = '';
+
+      trips.forEach(t=>{
+        const goAt = t.goAt ? new Date(t.goAt) : null;
+        const backAt = t.backAt ? new Date(t.backAt) : null;
+        const goSpan = document.createElement('span');
+        const backSpan = document.createElement('span');
+        const durSpan = document.createElement('span');
+        goSpan.textContent = goAt ? fmtDateTime(goAt) : '—';
+        backSpan.textContent = backAt ? fmtDateTime(backAt) : '—';
+        durSpan.textContent = goAt ? calcDuration(goAt, backAt || new Date()) : '—';
+        goCol.appendChild(goSpan);
+        backCol.appendChild(backSpan);
+        durCol.appendChild(durSpan);
+      });
+
+      if (trips.length === 0){
+        ['go-time','back-time','dur-time'].forEach(cls=>{
+          $(`.${cls} .col-list`, tr).innerHTML = '<span>-</span>';
+        });
+      }
+    }
+
+    function calcDuration(start, end){
+      const ms = end - start;
+      if (ms <= 0 || !isFinite(ms)) return '00:00';
+      const m = Math.floor(ms/60000), h = Math.floor(m/60), mm = m%60;
+      return `${pad(h)}:${pad(mm)}`;
+    }
+
+    async function onGo(name){
+      const nowIso = new Date().toISOString();
+      const st = statusMap.get(name) || {trips: []};
+      if (isOutNow(st)) { renderRow(name); return; }
+      st.trips.push({goAt: nowIso, backAt: null});
+      statusMap.set(name, st);
+      renderRow(name);
+      if (MODE==='cloud'){ 
+        const ref = statusDoc(name);
+        const snap = await ref.get();
+        const data = snap.exists ? (snap.data().trips||[]) : [];
+        data.push({goAt: nowIso, backAt: null});
+        await ref.set({trips: data, updatedAt: firebase.firestore.FieldValue.serverTimestamp()});
+      } else { 
+        setLocalStatus(name, st); 
+      }
+      refreshDriverTags();
+    }
+
+    async function onBack(name){
+      const nowIso = new Date().toISOString();
+      const st = statusMap.get(name) || {trips: []};
+      if (isOutNow(st)){
+        st.trips[st.trips.length-1].backAt = nowIso;
+      } else {
+        st.trips.push({goAt: null, backAt: nowIso});
+      }
+      statusMap.set(name, st);
+      renderRow(name);
+      if (MODE==='cloud'){ 
+        const ref = statusDoc(name);
+        const snap = await ref.get();
+        const data = snap.exists ? (snap.data().trips||[]) : [];
+        if (data.length && !data[data.length-1].backAt){
+          data[data.length-1].backAt = nowIso;
+        } else {
+          data.push({goAt: null, backAt: nowIso});
+        }
+        await ref.set({trips: data, updatedAt: firebase.firestore.FieldValue.serverTimestamp()});
+      } else { 
+        setLocalStatus(name, st); 
+      }
+      refreshDriverTags();
+    }
+
+    function renderTable(){
+      tbody.innerHTML = '';
+      DRIVERS.forEach(name=>{
+        const st = MODE==='cloud' ? {trips: []} : getLocalStatus(name);
+        statusMap.set(name, st);
+        tbody.appendChild(buildRow(name));
+      });
+      DRIVERS.forEach(renderRow);
+      attachCloudStatus();
+    }
+
+    function attachCloudStatus(){
+      if (MODE!=='cloud') return;
+      DRIVERS.forEach(name=>{
+        statusDoc(name).onSnapshot(snap=>{
+          const data = snap.exists ? (snap.data().trips||[]) : [];
+          statusMap.set(name, {trips: data});
+          renderRow(name);
+          refreshDriverTags();
+        });
+      });
+    }
+
+    function exportTodayCsv(){
+      const rows = [["Ngay","Ten_lai_xe","Lan","Thoi_diem_di","Thoi_diem_ve","Thoi_gian_di_cong_tac(hh:mm)"]];
+      DRIVERS.forEach(name=>{
+        const st = statusMap.get(name) || {trips: []};
+        if (st.trips.length === 0){
+          rows.push([todayKey(), name, 0, "", "", ""]);
+        } else {
+          st.trips.forEach((t,idx)=>{
+            const goAt = t.goAt ? fmtDateTime(new Date(t.goAt)) : "";
+            const backAt = t.backAt ? fmtDateTime(new Date(t.backAt)) : "";
+            const dur = t.goAt ? calcDuration(new Date(t.goAt), t.backAt ? new Date(t.backAt) : new Date()) : "";
+            rows.push([todayKey(), name, idx+1, goAt, backAt, dur]);
+          });
+        }
+      });
+      const csv = rows.map(r => r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(',')).join('\n');
+      const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href=url; a.download=`trang-thai-${todayKey()}.csv`; a.click();
+      setTimeout(()=>URL.revokeObjectURL(url), 2000);
+    }
+
+    $('#exportCsv').addEventListener('click', exportTodayCsv);
+    $('#resetDay').addEventListener('click', ()=>{
+      if (!confirm('Xoá dữ liệu hôm nay trên THIẾT BỊ NÀY?')) return;
+      Object.keys(localStorage).forEach(k=>{ if(k.startsWith(`status:${todayKey()}:`)) localStorage.removeItem(k); });
+      renderTable();
+      refreshDriverTags();
+    });
+
+    function tick(){
+      $('#today').textContent = fmtDate(todayStart());
+      $('#now').textContent = fmtTime(new Date());
+      DRIVERS.forEach(renderRow);
+      refreshDriverTags();
+    }
+    setInterval(tick, 60*1000);
+
+    function statusColor(name){
+      const st = statusMap.get(name) || {trips: []};
+      return (st.trips.length && st.trips[trips.length-1].goAt && !st.trips[st.trips.length-1].backAt) ? 'red' : 'green';
+    }
+    function refreshDriverTags(){
+      $$('.driver-tag').forEach(tag=>{
+        const name = tag.getAttribute('data-name') || tag.textContent;
+        tag.classList.remove('red','green');
+        tag.classList.add(statusColor(name));
+      });
+    }
+
+    // ===== BẢNG 2 =====
+    const weekTable = $('#weekTable');
+    const DAYS = ['Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7','Chủ nhật'];
+    const DAYS_SHORT = ['T2','T3','T4','T5','T6','T7','CN'];
+    function getMonday(d){ const t=new Date(d); const w=(t.getDay()+6)%7; t.setDate(t.getDate()-w); t.setHours(0,0,0,0); return t; }
+    let monday = getMonday(new Date());
+
+    function cellDoc(driver, date){
+      return db.collection('weeks').doc(ymd(monday)).collection('cells').doc(`${slug(driver)}__${ymd(date)}`);
+    }
+    function loadCellLocal(driver, date){
+      const raw = localStorage.getItem(`week:${ymd(monday)}:${driver}:${ymd(date)}`);
+      return raw? JSON.parse(raw) : {am1:'', am2:'', pm1:'', pm2:''};
+    }
+    function saveCellLocal(driver, date, data){
+      localStorage.setItem(`week:${ymd(monday)}:${driver}:${ymd(date)}`, JSON.stringify(data));
+    }
+    function debounce(fn, delay=250){
+      let t; return function(...args){ clearTimeout(t); t=setTimeout(()=>fn.apply(this,args), delay); };
+    }
+
+    function renderWeek(){
+      weekTable.innerHTML='';
+      const sun=new Date(monday); sun.setDate(sun.getDate()+6);
+      document.getElementById('weekRange').textContent = `${fmtDate(monday)} → ${fmtDate(sun)}`;
+
+      // header: chỉ tên lái xe
+      const thead = document.createElement('thead');
+      const htr = document.createElement('tr');
+      const th0 = document.createElement('th'); th0.textContent='Ngày'; htr.appendChild(th0);
+      DRIVERS.forEach(n=>{ const th=document.createElement('th'); th.textContent = n; htr.appendChild(th); });
+      thead.appendChild(htr); weekTable.appendChild(thead);
+
+      const tbodyWeek = document.createElement('tbody');
+      for(let i=0;i<7;i++){
+        const d = new Date(monday); d.setDate(d.getDate()+i);
+        const tr = document.createElement('tr');
+        const first = document.createElement('td'); first.innerHTML = `<div class="day-head"><div class="day-name">${DAYS[i]}</div><div class="day-date">${fmtDate(d)}</div></div>`; tr.appendChild(first);
+
+        const isPast = d < todayStart();
+        const isToday = ymd(d) === todayKey();
+
+        DRIVERS.forEach(name=>{
+          const td = document.createElement('td');
+          td.className = `day-cell ${isToday?'today':(isPast?'past':'')}`;
+
+          // Tên lái xe + "/ Tn" KHỚP VỚI HÀNG NGANG
+          const driverTag = document.createElement('div');
+          driverTag.className = `driver-tag ${statusColor(name)}`;
+          driverTag.setAttribute('data-name', name);
+          driverTag.textContent = `${name} / ${DAYS_SHORT[i]}`;
+          td.appendChild(driverTag);
+
+          const wrap = document.createElement('div'); 
+          wrap.className = 'cell-wrap';
+
+          const data = MODE==='cloud' ? null : loadCellLocal(name, d);
+
+          function buildHalf(title, v1, v2){
+            const half = document.createElement('div'); half.className='cell-half';
+            half.innerHTML = `<div class="half-title">${title}</div>`;
+            const l1 = document.createElement('div'); l1.className='line'; l1.contentEditable=true; l1.textContent=v1||''; half.appendChild(l1);
+            const l2 = document.createElement('div'); l2.className='line'; l2.contentEditable=true; l2.textContent=v2||''; half.appendChild(l2);
+            return {half, l1, l2};
+          }
+
+          const {half:am, l1:am1, l2:am2} = buildHalf('Sáng', data?.am1, data?.am2);
+          const {half:pm, l1:pm1, l2:pm2} = buildHalf('Chiều', data?.pm1, data?.pm2);
+          wrap.appendChild(am); wrap.appendChild(pm); td.appendChild(wrap); tr.appendChild(td);
+
+          const saveAll = debounce(()=>{
+            const payload = { am1: am1.textContent, am2: am2.textContent, pm1: pm1.textContent, pm2: pm2.textContent };
+            if (MODE==='cloud') cellDoc(name, d).set({...payload, updatedAt: firebase.firestore.FieldValue.serverTimestamp()}, {merge:true});
+            else saveCellLocal(name, d, payload);
+          }, 300);
+
+          // Ghi chú: KHÔNG xuống dòng nữa, chặn Enter
+          [am1,am2,pm1,pm2].forEach(el=>{
+            el._composing = false;
+            el.addEventListener('compositionstart', ()=> el._composing = true);
+            el.addEventListener('compositionend',   ()=> { el._composing = false; saveAll(); });
+            el.addEventListener('keydown', (e)=>{
+              if (e.key === 'Enter'){ e.preventDefault(); return false; }
+            });
+            el.addEventListener('input', ()=> { if (!el._composing) saveAll(); });
+          });
+
+          // Firestore realtime
+          if (MODE==='cloud'){
+            cellDoc(name, d).onSnapshot(snap=>{
+              const val = snap.exists ? snap.data() : {am1:'',am2:'',pm1:'',pm2:''};
+              const pairs = [[am1,'am1'],[am2,'am2'],[pm1,'pm1'],[pm2,'pm2']];
+              pairs.forEach(([el,key])=>{
+                if (document.activeElement === el || el._composing) return;
+                const newText = val[key] || '';
+                if ((el.textContent||'') !== newText) el.textContent = newText;
+              });
+            });
+          }
+        });
+
+        tbodyWeek.appendChild(tr);
+      }
+      weekTable.appendChild(tbodyWeek);
+    }
+
+    // Week controls
+    document.addEventListener('click', (e)=>{
+      if (e.target && e.target.id === 'prevWeek'){ monday.setDate(monday.getDate()-7); renderWeek(); refreshDriverTags(); }
+      if (e.target && e.target.id === 'nextWeek'){ monday.setDate(monday.getDate()+7); renderWeek(); refreshDriverTags(); }
+      if (e.target && e.target.id === 'thisWeek'){ monday = getMonday(new Date()); renderWeek(); refreshDriverTags(); }
+:`;
+        Object.keys(localStorage).forEach(k=>{ if (k.startsWith(prefix)) localStorage.removeItem(k); });
+        renderWeek(); refreshDriverTags();
+      }
+      if (e.target && e.target.id === 'exportWeekCsv'){
+        const rows = [["Ngay","Ten_lai_xe","Buoi","Dong1","Dong2"]];
+        for(let i=0;i<7;i++){
+          const d = new Date(monday); d.setDate(d.getDate()+i);
+          const dayStr = ymd(d);
+          DRIVERS.forEach(name=>{
+            let am1='',am2='',pm1='',pm2='';
+            if (MODE!=='cloud'){
+              const val = loadCellLocal(name,d);
+              am1 = val?.am1||''; am2 = val?.am2||''; pm1 = val?.pm1||''; pm2 = val?.pm2||'';
+            }
+            rows.push([dayStr, name, 'Sang', am1, am2]);
+            rows.push([dayStr, name, 'Chieu', pm1, pm2]);
+          });
+        }
+        const csv = rows.map(r => r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(',')).join('\n');
+        const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href=url; a.download=`tuan-${ymd(monday)}.csv`; a.click();
+        setTimeout(()=>URL.revokeObjectURL(url), 2000);
+      }
+    });
+
+    // INIT
+    function init(){
+      const now = new Date();
+      const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+      const dateStr = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()}`;
+      const tEl = document.getElementById('now'); if (tEl) tEl.textContent = timeStr;
+      const dEl = document.getElementById('today'); if (dEl) dEl.textContent = dateStr;
+      renderTable(); renderWeek(); attachCloudStatus();
+      setInterval(()=>{ DRIVERS.forEach(renderRow); refreshDriverTags(); }, 60*1000);
+    }
+    window.addEventListener('load', init);
+  </script>
+</body>
+</html>
