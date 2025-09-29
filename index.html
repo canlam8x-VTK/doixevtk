@@ -121,7 +121,6 @@
         <button id="prevWeek" class="btn btn-muted">◀ Tuần trước</button>
         <button id="thisWeek" class="btn btn-muted">Tuần này</button>
         <button id="nextWeek" class="btn btn-muted">Tuần sau ▶</button>
-        <button id="clearWeek" class="btn btn-muted">Xóa trắng tuần (máy này)</button>
         <button id="exportWeekCsv" class="btn btn-muted">Xuất CSV tuần</button>
       </div>
       <div class="scroll-x">
@@ -375,7 +374,10 @@
     setInterval(tick, 60*1000);
 
     function statusColor(name){
-      const st = statusMap.get(name) || {trips: []};
+  const trips = (statusMap.get(name) || {trips: []}).trips;
+  return (trips.length && trips[trips.length-1].goAt && !trips[trips.length-1].backAt) ? 'red' : 'green';
+}
+;
       return (st.trips.length && st.trips[trips.length-1].goAt && !st.trips[st.trips.length-1].backAt) ? 'red' : 'green';
     }
     function refreshDriverTags(){
@@ -497,24 +499,42 @@
       if (e.target && e.target.id === 'prevWeek'){ monday.setDate(monday.getDate()-7); renderWeek(); refreshDriverTags(); }
       if (e.target && e.target.id === 'nextWeek'){ monday.setDate(monday.getDate()+7); renderWeek(); refreshDriverTags(); }
       if (e.target && e.target.id === 'thisWeek'){ monday = getMonday(new Date()); renderWeek(); refreshDriverTags(); }
-      if (e.target && e.target.id === 'clearWeek'){
-        if (!confirm('Xóa ghi chú tuần này trên THIẾT BỊ NÀY?')) return;
-        const prefix = `week:${ymd(monday)}:`;
+:`;
         Object.keys(localStorage).forEach(k=>{ if (k.startsWith(prefix)) localStorage.removeItem(k); });
         renderWeek(); refreshDriverTags();
       }
       if (e.target && e.target.id === 'exportWeekCsv'){
-        const rows = [["Ngay","Ten_lai_xe","Buoi","Dong1","Dong2"]];
-        for(let i=0;i<7;i++){
-          const d = new Date(monday); d.setDate(d.getDate()+i);
-          const dayStr = ymd(d);
-          DRIVERS.forEach(name=>{
-            let am1='',am2='',pm1='',pm2='';
-            if (MODE!=='cloud'){
-              const val = loadCellLocal(name,d);
-              am1 = val?.am1||''; am2 = val?.am2||''; pm1 = val?.pm1||''; pm2 = val?.pm2||'';
-            }
-            rows.push([dayStr, name, 'Sang', am1, am2]);
+  (async () => {
+    const rows = [["Ngay","Ten_lai_xe","Buoi","Dong1","Dong2"]];
+    for(let i=0;i<7;i++){
+      const d = new Date(monday); d.setDate(d.getDate()+i);
+      const dayStr = ymd(d);
+      for (const name of DRIVERS){
+        let am1='',am2='',pm1='',pm2='';
+        if (MODE !== 'cloud'){
+          const val = loadCellLocal(name,d) || {};
+          am1 = val.am1||''; am2 = val.am2||''; pm1 = val.pm1||''; pm2 = val.pm2||'';
+        } else {
+          try{
+            const snap = await cellDoc(name, d).get();
+            const val = snap.exists ? snap.data() : {};
+            am1 = val.am1||''; am2 = val.am2||''; pm1 = val.pm1||''; pm2 = val.pm2||'';
+          }catch(err){
+            console.warn('Read cell error', name, dayStr, err);
+          }
+        }
+        rows.push([dayStr, name, 'Sang', am1, am2]);
+        rows.push([dayStr, name, 'Chieu', pm1, pm2]);
+      }
+    }
+    const csv = "\ufeff" + rows.map(r => r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href=url; a.download=`tuan-${ymd(monday)}.csv`; a.click();
+    setTimeout(()=>URL.revokeObjectURL(url), 2000);
+  })();
+}
+rows.push([dayStr, name, 'Sang', am1, am2]);
             rows.push([dayStr, name, 'Chieu', pm1, pm2]);
           });
         }
