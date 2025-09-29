@@ -86,11 +86,6 @@
   </style>
 </head>
 <body>
-  
-<div id="cloud-status-banner" style="position:fixed;right:12px;bottom:12px;background:#111827;color:#e5e7eb;padding:8px 10px;border:1px solid #374151;border-radius:10px;font:12px system-ui;z-index:9999;opacity:.9">
-  <b>Mode:</b> <span id="cloud-mode">detecting…</span> <span id="cloud-err" style="color:#fca5a5;margin-left:8px"></span>
-</div>
-
   <div class="wrap">
     <h1>🚗 Quản lý công tác lái xe</h1>
     <div class="sub">Bảng 2: ô ghi chú ban đầu nhỏ gọn, khi điền sẽ giãn ngang; mỗi ô hiển thị <b>Tên đ/c / Thứ</b> đúng theo hàng ngang (T2..CN).</div>
@@ -126,6 +121,7 @@
         <button id="prevWeek" class="btn btn-muted">◀ Tuần trước</button>
         <button id="thisWeek" class="btn btn-muted">Tuần này</button>
         <button id="nextWeek" class="btn btn-muted">Tuần sau ▶</button>
+        <button id="clearWeek" class="btn btn-muted">Xóa trắng tuần (máy này)</button>
         <button id="exportWeekCsv" class="btn btn-muted">Xuất CSV tuần</button>
       </div>
       <div class="scroll-x">
@@ -148,7 +144,6 @@
   </script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
 
   <script>
     // ===== CONFIG =====
@@ -168,43 +163,8 @@
 
     // ===== MODE: local vs cloud =====
     let MODE = 'local', db=null;
-try {
-  if (window.firebase && window.firebase.initializeApp) {
-    firebase.initializeApp(window.FIREBASE_CONFIG);
-    // Try anonymous sign-in (helps when Firestore rules require auth)
-    if (firebase.auth) {
-      firebase.auth().signInAnonymously().then(()=>{
-        db = firebase.firestore();
-        MODE = 'cloud';
-        const mt = document.getElementById('modeTag');
-        if (mt) mt.textContent = 'Chế độ: Đám mây (Firestore)';
-        const cm = document.getElementById('cloud-mode'); if (cm) cm.textContent = 'Đám mây (Firestore)';
-        // Re-render with cloud listeners
-        try { renderTable(); renderWeek(); attachCloudStatus(); } catch(_){}
-      }).catch(err=>{
-        // Even if auth fails, attempt Firestore (might still be public rules)
-        db = firebase.firestore();
-        MODE = 'cloud';
-        const mt = document.getElementById('modeTag');
-        if (mt) mt.textContent = 'Chế độ: Đám mây (Firestore)';
-        const cm = document.getElementById('cloud-mode'); if (cm) cm.textContent = 'Đám mây (Firestore)';
-        const ce = document.getElementById('cloud-err'); if (ce) ce.textContent = 'Auth warn: ' + (err && err.message || err);
-        try { renderTable(); renderWeek(); attachCloudStatus(); } catch(_){}
-      });
-    } else {
-      db = firebase.firestore();
-      MODE = 'cloud';
-    }
-  }
-} catch(e){
-  console.warn('Firebase init/auth failed, fallback to local', e);
-  const cm = document.getElementById('cloud-mode'); if (cm) cm.textContent = 'Cục bộ';
-  const ce = document.getElementById('cloud-err'); if (ce) ce.textContent = (e && e.message) || String(e);
-}
-const modeTagEl = document.getElementById('modeTag');
-if (modeTagEl) modeTagEl.textContent = `Chế độ: ${MODE==='cloud'?'Đám mây (Firestore)':'Cục bộ'}`;
-const cmInit = document.getElementById('cloud-mode'); if (cmInit && cmInit.textContent==='detecting…') cmInit.textContent = MODE==='cloud'?'Đám mây (Firestore)':'Cục bộ';
-
+    try { firebase.initializeApp(window.FIREBASE_CONFIG); db = firebase.firestore(); MODE = 'cloud'; }
+    catch(e){ console.warn('Firebase init failed, fallback to local', e); }
     const modeTagEl = document.getElementById('modeTag');
     if (modeTagEl) modeTagEl.textContent = `Chế độ: ${MODE==='cloud'?'Đám mây (Firestore)':'Cục bộ'}`;
 
@@ -537,7 +497,9 @@ const cmInit = document.getElementById('cloud-mode'); if (cmInit && cmInit.textC
       if (e.target && e.target.id === 'prevWeek'){ monday.setDate(monday.getDate()-7); renderWeek(); refreshDriverTags(); }
       if (e.target && e.target.id === 'nextWeek'){ monday.setDate(monday.getDate()+7); renderWeek(); refreshDriverTags(); }
       if (e.target && e.target.id === 'thisWeek'){ monday = getMonday(new Date()); renderWeek(); refreshDriverTags(); }
-:`;
+      if (e.target && e.target.id === 'clearWeek'){
+        if (!confirm('Xóa ghi chú tuần này trên THIẾT BỊ NÀY?')) return;
+        const prefix = `week:${ymd(monday)}:`;
         Object.keys(localStorage).forEach(k=>{ if (k.startsWith(prefix)) localStorage.removeItem(k); });
         renderWeek(); refreshDriverTags();
       }
