@@ -86,6 +86,11 @@
   </style>
 </head>
 <body>
+  
+<div id="cloud-status-banner" style="position:fixed;right:12px;bottom:12px;background:#111827;color:#e5e7eb;padding:8px 10px;border:1px solid #374151;border-radius:10px;font:12px system-ui;z-index:9999;opacity:.9">
+  <b>Mode:</b> <span id="cloud-mode">detecting…</span> <span id="cloud-err" style="color:#fca5a5;margin-left:8px"></span>
+</div>
+
   <div class="wrap">
     <h1>🚗 Quản lý công tác lái xe</h1>
     <div class="sub">Bảng 2: ô ghi chú ban đầu nhỏ gọn, khi điền sẽ giãn ngang; mỗi ô hiển thị <b>Tên đ/c / Thứ</b> đúng theo hàng ngang (T2..CN).</div>
@@ -143,6 +148,7 @@
   </script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
 
   <script>
     // ===== CONFIG =====
@@ -162,8 +168,43 @@
 
     // ===== MODE: local vs cloud =====
     let MODE = 'local', db=null;
-    try { firebase.initializeApp(window.FIREBASE_CONFIG); db = firebase.firestore(); MODE = 'cloud'; }
-    catch(e){ console.warn('Firebase init failed, fallback to local', e); }
+try {
+  if (window.firebase && window.firebase.initializeApp) {
+    firebase.initializeApp(window.FIREBASE_CONFIG);
+    // Try anonymous sign-in (helps when Firestore rules require auth)
+    if (firebase.auth) {
+      firebase.auth().signInAnonymously().then(()=>{
+        db = firebase.firestore();
+        MODE = 'cloud';
+        const mt = document.getElementById('modeTag');
+        if (mt) mt.textContent = 'Chế độ: Đám mây (Firestore)';
+        const cm = document.getElementById('cloud-mode'); if (cm) cm.textContent = 'Đám mây (Firestore)';
+        // Re-render with cloud listeners
+        try { renderTable(); renderWeek(); attachCloudStatus(); } catch(_){}
+      }).catch(err=>{
+        // Even if auth fails, attempt Firestore (might still be public rules)
+        db = firebase.firestore();
+        MODE = 'cloud';
+        const mt = document.getElementById('modeTag');
+        if (mt) mt.textContent = 'Chế độ: Đám mây (Firestore)';
+        const cm = document.getElementById('cloud-mode'); if (cm) cm.textContent = 'Đám mây (Firestore)';
+        const ce = document.getElementById('cloud-err'); if (ce) ce.textContent = 'Auth warn: ' + (err && err.message || err);
+        try { renderTable(); renderWeek(); attachCloudStatus(); } catch(_){}
+      });
+    } else {
+      db = firebase.firestore();
+      MODE = 'cloud';
+    }
+  }
+} catch(e){
+  console.warn('Firebase init/auth failed, fallback to local', e);
+  const cm = document.getElementById('cloud-mode'); if (cm) cm.textContent = 'Cục bộ';
+  const ce = document.getElementById('cloud-err'); if (ce) ce.textContent = (e && e.message) || String(e);
+}
+const modeTagEl = document.getElementById('modeTag');
+if (modeTagEl) modeTagEl.textContent = `Chế độ: ${MODE==='cloud'?'Đám mây (Firestore)':'Cục bộ'}`;
+const cmInit = document.getElementById('cloud-mode'); if (cmInit && cmInit.textContent==='detecting…') cmInit.textContent = MODE==='cloud'?'Đám mây (Firestore)':'Cục bộ';
+
     const modeTagEl = document.getElementById('modeTag');
     if (modeTagEl) modeTagEl.textContent = `Chế độ: ${MODE==='cloud'?'Đám mây (Firestore)':'Cục bộ'}`;
 
@@ -535,17 +576,5 @@
     }
     window.addEventListener('load', init);
   </script>
-
-<!-- build:noclear-build-1759141791 -->
-<script>
-  // Guard: ensure no "Xóa trắng tuần" button exists even if a cached HTML injects it
-  window.addEventListener('DOMContentLoaded', function(){
-    var btn = document.getElementById('clearWeek');
-    if (btn && btn.parentNode) btn.parentNode.removeChild(btn);
-  });
-</script>
-
-
-<div style="text-align:center;font:12px/1.2 system-ui;color:#bbb;padding:6px 0;">noclear-build-1759141791</div>
 </body>
 </html>
