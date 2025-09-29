@@ -121,7 +121,6 @@
         <button id="prevWeek" class="btn btn-muted">◀ Tuần trước</button>
         <button id="thisWeek" class="btn btn-muted">Tuần này</button>
         <button id="nextWeek" class="btn btn-muted">Tuần sau ▶</button>
-        <button id="clearWeek" class="btn btn-muted">Xóa trắng tuần (máy này)</button>
         <button id="exportWeekCsv" class="btn btn-muted">Xuất CSV tuần</button>
       </div>
       <div class="scroll-x">
@@ -497,9 +496,7 @@
       if (e.target && e.target.id === 'prevWeek'){ monday.setDate(monday.getDate()-7); renderWeek(); refreshDriverTags(); }
       if (e.target && e.target.id === 'nextWeek'){ monday.setDate(monday.getDate()+7); renderWeek(); refreshDriverTags(); }
       if (e.target && e.target.id === 'thisWeek'){ monday = getMonday(new Date()); renderWeek(); refreshDriverTags(); }
-      if (e.target && e.target.id === 'clearWeek'){
-        if (!confirm('Xóa ghi chú tuần này trên THIẾT BỊ NÀY?')) return;
-        const prefix = `week:${ymd(monday)}:`;
+:`;
         Object.keys(localStorage).forEach(k=>{ if (k.startsWith(prefix)) localStorage.removeItem(k); });
         renderWeek(); refreshDriverTags();
       }
@@ -538,5 +535,17 @@
     }
     window.addEventListener('load', init);
   </script>
+
+<!-- build:noclear-build-1759141791 -->
+<script>
+  // Guard: ensure no "Xóa trắng tuần" button exists even if a cached HTML injects it
+  window.addEventListener('DOMContentLoaded', function(){
+    var btn = document.getElementById('clearWeek');
+    if (btn && btn.parentNode) btn.parentNode.removeChild(btn);
+  });
+</script>
+
+
+<div style="text-align:center;font:12px/1.2 system-ui;color:#bbb;padding:6px 0;">noclear-build-1759141791</div>
 </body>
 </html>
