@@ -355,9 +355,10 @@
     }
 
     $('#exportCsv').addEventListener('click', exportTodayCsv);
-    $('#resetDay').addEventListener('click', ()=>{
+    (function(){ const _el=document.querySelector('#resetDay'); if(!_el) return; _el.addEventListener('click', ()=>{
       if (!confirm('Xoá dữ liệu hôm nay trên THIẾT BỊ NÀY?')) return;
-      Object.keys(localStorage).forEach(k=>{ if(k.startsWith(`status:${todayKey()}:`)) localStorage.removeItem(k); });
+      Object.keys(localStorage).forEach(k=>{ if(k.startsWith(`status:${todayKey()}:`)) localStorage.removeItem(k); })();
+});
       renderTable();
       refreshDriverTags();
     });
