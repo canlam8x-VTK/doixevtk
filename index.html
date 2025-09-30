@@ -145,6 +145,7 @@
   <!-- SDK để lại y như gốc; nếu bị chặn vẫn chạy ở chế độ local -->
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
 
   <script>
     // ===== GUARDS: tránh trắng trang khi firebase bị chặn =====
@@ -176,6 +177,22 @@
     } catch(e){
       console.warn('Firebase init failed, fallback to local', e);
     }
+    
+// === AUTH HELPERS (ensure anonymous auth before listeners) ===
+async function ensureAnonAuth(){
+  if (!(window.firebase && firebase.auth)) return false;
+  try{ firebase.app(); }catch(_){ firebase.initializeApp(window.FIREBASE_CONFIG); }
+  try{
+    if (!firebase.auth().currentUser){
+      await firebase.auth().signInAnonymously();
+    }
+    return true;
+  }catch(e){
+    console.warn('Anonymous auth failed:', e);
+    return false;
+  }
+}
+
     const modeTagEl = document.getElementById('modeTag');
     if (modeTagEl) modeTagEl.textContent = `Chế độ: ${MODE==='cloud'?'Đám mây (Firestore)':'Cục bộ'}`;
 
@@ -558,7 +575,8 @@
       const dateStr = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()}`;
       const tEl = document.getElementById('now'); if (tEl) tEl.textContent = timeStr;
       const dEl = document.getElementById('today'); if (dEl) dEl.textContent = dateStr;
-      renderTable(); renderWeek(); attachCloudStatus();
+      renderTable(); renderWeek();
+      ensureAnonAuth().then(()=>{ try{ attachCloudStatus(); }catch(e){ console.warn(e); } });
       // Không thêm interval trùng; đã có tick() mỗi phút
     }
     window.addEventListener('load', init);
