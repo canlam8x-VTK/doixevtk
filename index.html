@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta http-equiv="Cache-Control" content="no-store" />
-  <title>Quáº£n lĂ½ cĂ´ng tĂ¡c lĂ¡i xe</title>
+  <title>Quản lý công tác lái xe — Rebuilt</title>
   <style>
     :root{
       --bg:#1a0709;
@@ -57,23 +57,23 @@
     .cell-wrap{display:grid;grid-template-columns:1fr 1fr;gap:0;border-top:1px dashed rgba(255,213,79,.25)}
     .cell-half{padding:4px}
     .half-title{font-size:10.5px;color:var(--muted);margin:0 0 4px}
-    /* Ă” ghi chĂº: ban Ä‘áº§u nhá» gá»n, chá»‰ giĂ£n ngang khi nháº­p, khĂ´ng xuá»‘ng dĂ²ng */
+    /* Ô ghi chú: ban đầu nhỏ gọn, chỉ giãn ngang khi nhập, không xuống dòng */
     .line{
       border:1px dashed var(--line2);
       border-radius:6px;
       padding:2px 4px;
       min-height:24px;
-      min-width:40px;        /* nhá» hÆ¡n */
-      max-width:100px;       /* giá»›i háº¡n ban Ä‘áº§u Ä‘á»ƒ báº£ng gá»n */
-      width:fit-content;     /* giĂ£n theo ná»™i dung */
+      min-width:40px;        /* nhỏ hơn */
+      max-width:100px;       /* giới hạn ban đầu để bảng gọn */
+      width:fit-content;     /* giãn theo nội dung */
       display:inline-block;
       background:rgba(0,0,0,.12);
       color:var(--ink);
       font-size:14.5px;
       line-height:1.5;
-      white-space:nowrap;    /* khĂ´ng xuá»‘ng dĂ²ng */
+      white-space:nowrap;    /* không xuống dòng */
       word-break:keep-all;
-      overflow-x:auto;       /* chá»¯ dĂ i thĂ¬ kĂ©o ngang */
+      overflow-x:auto;       /* chữ dài thì kéo ngang */
       overflow-y:hidden;
       -webkit-overflow-scrolling:touch;
     }
@@ -87,42 +87,42 @@
 </head>
 <body>
   <div class="wrap">
-    <h1>đŸ— Quáº£n lĂ½ cĂ´ng tĂ¡c lĂ¡i xe</h1>
-    <div class="sub">Báº£ng 2: Ă´ ghi chĂº ban Ä‘áº§u nhá» gá»n, khi Ä‘iá»n sáº½ giĂ£n ngang; má»—i Ă´ hiá»ƒn thá»‹ <b>TĂªn Ä‘/c / Thá»©</b> Ä‘Ăºng theo hĂ ng ngang (T2..CN).</div>
+    <h1>🚗 Quản lý công tác lái xe</h1>
+    <div class="sub">Bảng 2: ô ghi chú ban đầu nhỏ gọn, khi điền sẽ giãn ngang; mỗi ô hiển thị <b>Tên đ/c / Thứ</b> đúng theo hàng ngang (T2..CN).</div>
 
-    <!-- Báº¢NG 1 -->
+    <!-- BẢNG 1 -->
     <div class="card">
       <div class="toolbar">
-        <span class="tag">HĂ´m nay: <b id="today"></b></span>
-        <span class="tag clock">Giá»: <span id="now"></span></span>
-        <button id="resetDay" class="btn btn-muted">XĂ³a dá»¯ liá»‡u hĂ´m nay (mĂ¡y nĂ y)</button>
-        <button id="exportCsv" class="btn btn-muted">Xuáº¥t CSV hĂ´m nay</button>
-        <span class="right tag" id="modeTag">Cháº¿ Ä‘á»™: Cá»¥c bá»™</span>
+        <span class="tag">Hôm nay: <b id="today"></b></span>
+        <span class="tag clock">Giờ: <span id="now"></span></span>
+        <button id="resetDay" class="btn btn-muted">Xóa dữ liệu hôm nay (máy này)</button>
+        <button id="exportCsv" class="btn btn-muted">Xuất CSV hôm nay</button>
+        <span class="right tag" id="modeTag">Chế độ: Cục bộ</span>
       </div>
       <table>
         <thead>
           <tr>
-            <th>TĂªn lĂ¡i xe</th>
-            <th>Tráº¡ng thĂ¡i hoáº¡t Ä‘á»™ng xe</th>
-            <th class="hide-sm">Thá»i Ä‘iá»ƒm Ä‘i</th>
-            <th class="hide-sm">Thá»i Ä‘iá»ƒm vá»</th>
-            <th class="hide-sm">Thá»i gian Ä‘i cĂ´ng tĂ¡c</th>
-            <th>Thao tĂ¡c</th>
+            <th>Tên lái xe</th>
+            <th>Trạng thái hoạt động xe</th>
+            <th class="hide-sm">Thời điểm đi</th>
+            <th class="hide-sm">Thời điểm về</th>
+            <th class="hide-sm">Thời gian đi công tác</th>
+            <th>Thao tác</th>
           </tr>
         </thead>
         <tbody id="tbody"></tbody>
       </table>
     </div>
 
-    <!-- Báº¢NG 2 -->
+    <!-- BẢNG 2 -->
     <div class="card">
       <div class="toolbar">
-        <span class="tag">Tuáº§n: <b id="weekRange"></b></span>
-        <button id="prevWeek" class="btn btn-muted">â—€ Tuáº§n trÆ°á»›c</button>
-        <button id="thisWeek" class="btn btn-muted">Tuáº§n nĂ y</button>
-        <button id="nextWeek" class="btn btn-muted">Tuáº§n sau â–¶</button>
-        <button id="clearWeek" class="btn btn-muted">XĂ³a tráº¯ng tuáº§n (mĂ¡y nĂ y)</button>
-        <button id="exportWeekCsv" class="btn btn-muted">Xuáº¥t CSV tuáº§n</button>
+        <span class="tag">Tuần: <b id="weekRange"></b></span>
+        <button id="prevWeek" class="btn btn-muted">◀ Tuần trước</button>
+        <button id="thisWeek" class="btn btn-muted">Tuần này</button>
+        <button id="nextWeek" class="btn btn-muted">Tuần sau ▶</button>
+        <button id="clearWeek" class="btn btn-muted">Xóa trắng tuần (máy này)</button>
+        <button id="exportWeekCsv" class="btn btn-muted">Xuất CSV tuần</button>
       </div>
       <div class="scroll-x">
         <table class="week-grid" id="weekTable"></table>
@@ -130,7 +130,7 @@
     </div>
   </div>
 
-  <!-- Firebase config -->
+  <!-- Firebase config (giữ nguyên như bản gốc) -->
   <script>
     window.FIREBASE_CONFIG = {
       apiKey: "AIzaSyBElRy7vM3ISQvjgHsjS7m3s4Mdozy5gto",
@@ -142,12 +142,16 @@
       measurementId: "G-BL1J774EWD"
     };
   </script>
+  <!-- SDK để lại y như gốc; nếu bị chặn vẫn chạy ở chế độ local -->
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
 
   <script>
+    // ===== GUARDS: tránh trắng trang khi firebase bị chặn =====
+    const hasFirebase = typeof window.firebase !== 'undefined' && !!window.firebase.initializeApp;
+
     // ===== CONFIG =====
-    const DRIVERS = ["Ä/c Luáº­n","Ä/c Hiá»n","Ä/c Tráº¡ch","Ä/c TĂ¹ng","Ä/c LĂª HĂ¹ng","Ä/c Nháº­t","Ä/c Ngá»c","Ä/c Chiáº¿n","Ä/c Thá»"];
+    const DRIVERS = ["Đ/c Luận","Đ/c Hiền","Đ/c Trạch","Đ/c Tùng","Đ/c Lê Hùng","Đ/c Nhật","Đ/c Ngọc","Đ/c Chiến","Đ/c Thọ"];
 
     // ===== UTILS =====
     const $ = (s,root=document)=>root.querySelector(s);
@@ -163,12 +167,19 @@
 
     // ===== MODE: local vs cloud =====
     let MODE = 'local', db=null;
-    try { firebase.initializeApp(window.FIREBASE_CONFIG); db = firebase.firestore(); MODE = 'cloud'; }
-    catch(e){ console.warn('Firebase init failed, fallback to local', e); }
+    try {
+      if (hasFirebase) {
+        firebase.initializeApp(window.FIREBASE_CONFIG);
+        db = firebase.firestore();
+        MODE = 'cloud';
+      }
+    } catch(e){
+      console.warn('Firebase init failed, fallback to local', e);
+    }
     const modeTagEl = document.getElementById('modeTag');
-    if (modeTagEl) modeTagEl.textContent = `Cháº¿ Ä‘á»™: ${MODE==='cloud'?'ÄĂ¡m mĂ¢y (Firestore)':'Cá»¥c bá»™'}`;
+    if (modeTagEl) modeTagEl.textContent = `Chế độ: ${MODE==='cloud'?'Đám mây (Firestore)':'Cục bộ'}`;
 
-    // ===== Báº¢NG 1 =====
+    // ===== BẢNG 1 =====
     const tbody = $('#tbody');
     const statusMap = new Map(); // name -> { trips: [{goAt, backAt}] }
 
@@ -191,6 +202,7 @@
     }
 
     function statusDoc(name){
+      if (!db) return null;
       return db.collection('status').doc(todayKey()).collection('drivers').doc(slug(name));
     }
 
@@ -200,14 +212,14 @@
       tr.dataset.id = id;
       tr.innerHTML = `
         <td><div class="row"><span class="dot" aria-hidden="true"></span><b class="driver"></b></div></td>
-        <td class="state">ChÆ°a Ä‘i</td>
+        <td class="state">Chưa đi</td>
         <td class="go-time hide-sm"><div class="col-list"></div></td>
         <td class="back-time hide-sm"><div class="col-list"></div></td>
         <td class="dur-time hide-sm"><div class="col-list"></div></td>
         <td>
           <div class="row">
-            <button class="btn btn-go act-go">Äi cĂ´ng tĂ¡c</button>
-            <button class="btn btn-back act-back">Vá» cĂ´ng ty</button>
+            <button class="btn btn-go act-go">Đi công tác</button>
+            <button class="btn btn-back act-back">Về công ty</button>
           </div>
         </td>`;
       $('.driver', tr).textContent = name;
@@ -233,7 +245,7 @@
       if(isOutNow(st)) dot.classList.add('going'); else dot.classList.add('backed');
 
       $('.driver', tr).textContent = name;
-      $('.state', tr).textContent = isOutNow(st) ? 'Äang Ä‘i cĂ´ng tĂ¡c' : (trips.length ? 'ÄĂ£ vá» cĂ´ng ty' : 'ChÆ°a Ä‘i');
+      $('.state', tr).textContent = isOutNow(st) ? 'Đang đi công tác' : (trips.length ? 'Đã về công ty' : 'Chưa đi');
 
       const goCol = $('.go-time .col-list', tr);
       const backCol = $('.back-time .col-list', tr);
@@ -246,9 +258,9 @@
         const goSpan = document.createElement('span');
         const backSpan = document.createElement('span');
         const durSpan = document.createElement('span');
-        goSpan.textContent = goAt ? fmtDateTime(goAt) : 'â€”';
-        backSpan.textContent = backAt ? fmtDateTime(backAt) : 'â€”';
-        durSpan.textContent = goAt ? calcDuration(goAt, backAt || new Date()) : 'â€”';
+        goSpan.textContent = goAt ? fmtDateTime(goAt) : '—';
+        backSpan.textContent = backAt ? fmtDateTime(backAt) : '—';
+        durSpan.textContent = goAt ? calcDuration(goAt, backAt || new Date()) : '—';
         goCol.appendChild(goSpan);
         backCol.appendChild(backSpan);
         durCol.appendChild(durSpan);
@@ -275,12 +287,14 @@
       st.trips.push({goAt: nowIso, backAt: null});
       statusMap.set(name, st);
       renderRow(name);
-      if (MODE==='cloud'){ 
-        const ref = statusDoc(name);
-        const snap = await ref.get();
-        const data = snap.exists ? (snap.data().trips||[]) : [];
-        data.push({goAt: nowIso, backAt: null});
-        await ref.set({trips: data, updatedAt: firebase.firestore.FieldValue.serverTimestamp()});
+      if (MODE==='cloud' && db){ 
+        try{
+          const ref = statusDoc(name);
+          const snap = await ref.get();
+          const data = snap.exists ? (snap.data().trips||[]) : [];
+          data.push({goAt: nowIso, backAt: null});
+          await ref.set({trips: data, updatedAt: firebase.firestore.FieldValue.serverTimestamp()});
+        }catch(err){ console.warn('Cloud write error (go):', err); }
       } else { 
         setLocalStatus(name, st); 
       }
@@ -297,16 +311,18 @@
       }
       statusMap.set(name, st);
       renderRow(name);
-      if (MODE==='cloud'){ 
-        const ref = statusDoc(name);
-        const snap = await ref.get();
-        const data = snap.exists ? (snap.data().trips||[]) : [];
-        if (data.length && !data[data.length-1].backAt){
-          data[data.length-1].backAt = nowIso;
-        } else {
-          data.push({goAt: null, backAt: nowIso});
-        }
-        await ref.set({trips: data, updatedAt: firebase.firestore.FieldValue.serverTimestamp()});
+      if (MODE==='cloud' && db){ 
+        try{
+          const ref = statusDoc(name);
+          const snap = await ref.get();
+          const data = snap.exists ? (snap.data().trips||[]) : [];
+          if (data.length && !data[data.length-1].backAt){
+            data[data.length-1].backAt = nowIso;
+          } else {
+            data.push({goAt: null, backAt: nowIso});
+          }
+          await ref.set({trips: data, updatedAt: firebase.firestore.FieldValue.serverTimestamp()});
+        }catch(err){ console.warn('Cloud write error (back):', err); }
       } else { 
         setLocalStatus(name, st); 
       }
@@ -325,13 +341,15 @@
     }
 
     function attachCloudStatus(){
-      if (MODE!=='cloud') return;
+      if (MODE!=='cloud' || !db) return;
       DRIVERS.forEach(name=>{
         statusDoc(name).onSnapshot(snap=>{
           const data = snap.exists ? (snap.data().trips||[]) : [];
           statusMap.set(name, {trips: data});
           renderRow(name);
           refreshDriverTags();
+        }, err=>{
+          console.warn('Cloud listen error:', err);
         });
       });
     }
@@ -351,7 +369,7 @@
           });
         }
       });
-      const csv = rows.map(r => r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(',')).join('\n');
+      const csv = "\ufeff" + rows.map(r => r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(',')).join('\n');
       const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a'); a.href=url; a.download=`trang-thai-${todayKey()}.csv`; a.click();
@@ -360,7 +378,7 @@
 
     $('#exportCsv').addEventListener('click', exportTodayCsv);
     $('#resetDay').addEventListener('click', ()=>{
-      if (!confirm('XoĂ¡ dá»¯ liá»‡u hĂ´m nay trĂªn THIáº¾T Bá» NĂ€Y?')) return;
+      if (!confirm('Xoá dữ liệu hôm nay trên THIẾT BỊ NÀY?')) return;
       Object.keys(localStorage).forEach(k=>{ if(k.startsWith(`status:${todayKey()}:`)) localStorage.removeItem(k); });
       renderTable();
       refreshDriverTags();
@@ -375,8 +393,8 @@
     setInterval(tick, 60*1000);
 
     function statusColor(name){
-      const st = statusMap.get(name) || {trips: []};
-      return (st.trips.length && st.trips[trips.length-1].goAt && !st.trips[st.trips.length-1].backAt) ? 'red' : 'green';
+      const trips = (statusMap.get(name) || {trips: []}).trips;
+      return (trips.length && trips[trips.length-1].goAt && !trips[trips.length-1].backAt) ? 'red' : 'green';
     }
     function refreshDriverTags(){
       $$('.driver-tag').forEach(tag=>{
@@ -386,14 +404,15 @@
       });
     }
 
-    // ===== Báº¢NG 2 =====
+    // ===== BẢNG 2 =====
     const weekTable = $('#weekTable');
-    const DAYS = ['Thá»© 2','Thá»© 3','Thá»© 4','Thá»© 5','Thá»© 6','Thá»© 7','Chá»§ nháº­t'];
+    const DAYS = ['Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7','Chủ nhật'];
     const DAYS_SHORT = ['T2','T3','T4','T5','T6','T7','CN'];
     function getMonday(d){ const t=new Date(d); const w=(t.getDay()+6)%7; t.setDate(t.getDate()-w); t.setHours(0,0,0,0); return t; }
     let monday = getMonday(new Date());
 
     function cellDoc(driver, date){
+      if (!db) return null;
       return db.collection('weeks').doc(ymd(monday)).collection('cells').doc(`${slug(driver)}__${ymd(date)}`);
     }
     function loadCellLocal(driver, date){
@@ -407,15 +426,23 @@
       let t; return function(...args){ clearTimeout(t); t=setTimeout(()=>fn.apply(this,args), delay); };
     }
 
+    // Track listeners to avoid leaks when changing week
+    let weekUnsubs = [];
+    function cleanupWeekListeners(){
+      weekUnsubs.forEach(fn=>{ try{ fn && fn(); }catch(e){} });
+      weekUnsubs = [];
+    }
+
     function renderWeek(){
+      cleanupWeekListeners();
       weekTable.innerHTML='';
       const sun=new Date(monday); sun.setDate(sun.getDate()+6);
-      document.getElementById('weekRange').textContent = `${fmtDate(monday)} â†’ ${fmtDate(sun)}`;
+      document.getElementById('weekRange').textContent = `${fmtDate(monday)} → ${fmtDate(sun)}`;
 
-      // header: chá»‰ tĂªn lĂ¡i xe
+      // header: chỉ tên lái xe
       const thead = document.createElement('thead');
       const htr = document.createElement('tr');
-      const th0 = document.createElement('th'); th0.textContent='NgĂ y'; htr.appendChild(th0);
+      const th0 = document.createElement('th'); th0.textContent='Ngày'; htr.appendChild(th0);
       DRIVERS.forEach(n=>{ const th=document.createElement('th'); th.textContent = n; htr.appendChild(th); });
       thead.appendChild(htr); weekTable.appendChild(thead);
 
@@ -432,7 +459,7 @@
           const td = document.createElement('td');
           td.className = `day-cell ${isToday?'today':(isPast?'past':'')}`;
 
-          // TĂªn lĂ¡i xe + "/ Tn" KHá»P Vá»I HĂ€NG NGANG
+          // Tên lái xe + "/ Tn" KHỚP VỚI HÀNG NGANG
           const driverTag = document.createElement('div');
           driverTag.className = `driver-tag ${statusColor(name)}`;
           driverTag.setAttribute('data-name', name);
@@ -452,17 +479,21 @@
             return {half, l1, l2};
           }
 
-          const {half:am, l1:am1, l2:am2} = buildHalf('SĂ¡ng', data?.am1, data?.am2);
-          const {half:pm, l1:pm1, l2:pm2} = buildHalf('Chiá»u', data?.pm1, data?.pm2);
+          const {half:am, l1:am1, l2:am2} = buildHalf('Sáng', data?.am1, data?.am2);
+          const {half:pm, l1:pm1, l2:pm2} = buildHalf('Chiều', data?.pm1, data?.pm2);
           wrap.appendChild(am); wrap.appendChild(pm); td.appendChild(wrap); tr.appendChild(td);
 
           const saveAll = debounce(()=>{
             const payload = { am1: am1.textContent, am2: am2.textContent, pm1: pm1.textContent, pm2: pm2.textContent };
-            if (MODE==='cloud') cellDoc(name, d).set({...payload, updatedAt: firebase.firestore.FieldValue.serverTimestamp()}, {merge:true});
-            else saveCellLocal(name, d, payload);
+            if (MODE==='cloud' && db) {
+              const ref = cellDoc(name, d);
+              ref && ref.set({...payload, updatedAt: firebase.firestore.FieldValue.serverTimestamp()}, {merge:true}).catch(err=>console.warn('Cloud cell write error', err));
+            } else {
+              saveCellLocal(name, d, payload);
+            }
           }, 300);
 
-          // Ghi chĂº: KHĂ”NG xuá»‘ng dĂ²ng ná»¯a, cháº·n Enter
+          // Ghi chú: KHÔNG xuống dòng nữa, chặn Enter
           [am1,am2,pm1,pm2].forEach(el=>{
             el._composing = false;
             el.addEventListener('compositionstart', ()=> el._composing = true);
@@ -474,16 +505,18 @@
           });
 
           // Firestore realtime
-          if (MODE==='cloud'){
-            cellDoc(name, d).onSnapshot(snap=>{
-              const val = snap.exists ? snap.data() : {am1:'',am2:'',pm1:'',pm2:''};
+          if (MODE==='cloud' && db){
+            const ref = cellDoc(name, d);
+            const unsub = ref && ref.onSnapshot(snap=>{
+              const val = snap && snap.exists ? snap.data() : {am1:'',am2:'',pm1:'',pm2:''};
               const pairs = [[am1,'am1'],[am2,'am2'],[pm1,'pm1'],[pm2,'pm2']];
               pairs.forEach(([el,key])=>{
                 if (document.activeElement === el || el._composing) return;
                 const newText = val[key] || '';
                 if ((el.textContent||'') !== newText) el.textContent = newText;
               });
-            });
+            }, err=>console.warn('Cloud cell listen error', err));
+            if (typeof unsub === 'function') weekUnsubs.push(unsub);
           }
         });
 
@@ -498,31 +531,42 @@
       if (e.target && e.target.id === 'nextWeek'){ monday.setDate(monday.getDate()+7); renderWeek(); refreshDriverTags(); }
       if (e.target && e.target.id === 'thisWeek'){ monday = getMonday(new Date()); renderWeek(); refreshDriverTags(); }
       if (e.target && e.target.id === 'clearWeek'){
-        if (!confirm('XĂ³a ghi chĂº tuáº§n nĂ y trĂªn THIáº¾T Bá» NĂ€Y?')) return;
+        if (!confirm('Xóa ghi chú tuần này trên THIẾT BỊ NÀY?')) return;
         const prefix = `week:${ymd(monday)}:`;
         Object.keys(localStorage).forEach(k=>{ if (k.startsWith(prefix)) localStorage.removeItem(k); });
         renderWeek(); refreshDriverTags();
       }
       if (e.target && e.target.id === 'exportWeekCsv'){
-        const rows = [["Ngay","Ten_lai_xe","Buoi","Dong1","Dong2"]];
-        for(let i=0;i<7;i++){
-          const d = new Date(monday); d.setDate(d.getDate()+i);
-          const dayStr = ymd(d);
-          DRIVERS.forEach(name=>{
-            let am1='',am2='',pm1='',pm2='';
-            if (MODE!=='cloud'){
-              const val = loadCellLocal(name,d);
-              am1 = val?.am1||''; am2 = val?.am2||''; pm1 = val?.pm1||''; pm2 = val?.pm2||'';
+        (async () => {
+          const rows = [["Ngay","Ten_lai_xe","Buoi","Dong1","Dong2"]];
+          for(let i=0;i<7;i++){
+            const d = new Date(monday); d.setDate(d.getDate()+i);
+            const dayStr = ymd(d);
+            for (const name of DRIVERS){
+              let am1='',am2='',pm1='',pm2='';
+              if (MODE!=='cloud' || !db){
+                const val = loadCellLocal(name,d) || {};
+                am1 = val.am1||''; am2 = val.am2||''; pm1 = val.pm1||''; pm2 = val.pm2||'';
+              } else {
+                try{
+                  const snap = await cellDoc(name, d).get();
+                  const val = snap && snap.exists ? snap.data() : {};
+                  am1 = val.am1||''; am2 = val.am2||''; pm1 = val.pm1||''; pm2 = val.pm2||'';
+                }catch(err){
+                  console.warn('Read cell error', name, dayStr, err);
+                }
+              }
+              rows.push([dayStr, name, 'Sang', am1, am2]);
+              rows.push([dayStr, name, 'Chieu', pm1, pm2]);
             }
-            rows.push([dayStr, name, 'Sang', am1, am2]);
-            rows.push([dayStr, name, 'Chieu', pm1, pm2]);
-          });
-        }
-        const csv = rows.map(r => r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(',')).join('\n');
-        const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a'); a.href=url; a.download=`tuan-${ymd(monday)}.csv`; a.click();
-        setTimeout(()=>URL.revokeObjectURL(url), 2000);
+          }
+          // Prepend BOM for Excel-friendly UTF-8
+          const csv = "\ufeff" + rows.map(r => r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(',')).join('\n');
+          const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a'); a.href=url; a.download=`tuan-${ymd(monday)}.csv`; a.click();
+          setTimeout(()=>URL.revokeObjectURL(url), 2000);
+        })();
       }
     });
 
@@ -534,7 +578,7 @@
       const tEl = document.getElementById('now'); if (tEl) tEl.textContent = timeStr;
       const dEl = document.getElementById('today'); if (dEl) dEl.textContent = dateStr;
       renderTable(); renderWeek(); attachCloudStatus();
-      setInterval(()=>{ DRIVERS.forEach(renderRow); refreshDriverTags(); }, 60*1000);
+      // Không thêm interval trùng; đã có tick() mỗi phút
     }
     window.addEventListener('load', init);
   </script>
