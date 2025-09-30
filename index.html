@@ -530,6 +530,12 @@
       if (e.target && e.target.id === 'prevWeek'){ monday.setDate(monday.getDate()-7); renderWeek(); refreshDriverTags(); }
       if (e.target && e.target.id === 'nextWeek'){ monday.setDate(monday.getDate()+7); renderWeek(); refreshDriverTags(); }
       if (e.target && e.target.id === 'thisWeek'){ monday = getMonday(new Date()); renderWeek(); refreshDriverTags(); }
+      if (e.target && e.target.id === 'clearWeek'){
+        if (!confirm('Xóa ghi chú tuần này trên THIẾT BỊ NÀY?')) return;
+        const prefix = `week:${ymd(monday)}:`;
+        Object.keys(localStorage).forEach(k=>{ if (k.startsWith(prefix)) localStorage.removeItem(k); });
+        renderWeek(); refreshDriverTags();
+      }
       if (e.target && e.target.id === 'exportWeekCsv'){
         (async () => {
           const rows = [["Ngay","Ten_lai_xe","Buoi","Dong1","Dong2"]];
