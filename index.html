@@ -131,18 +131,22 @@
 
   <!-- Firebase config -->
   <script>
-    window.FIREBASE_CONFIG = {
-      apiKey: "AIzaSyBElRy7vM3ISQvjgHsjS7m3s4Mdozy5gto",
-      authDomain: "lichxe-9384a.firebaseapp.com",
-      projectId: "lichxe-9384a",
-      storageBucket: "lichxe-9384a.firebasestorage.app",
-      messagingSenderId: "1053042148957",
-      appId: "1:1053042148957:web:104a9bfb72240da9b2afb4",
-      measurementId: "G-BL1J774EWD"
-    };
+    
+  window.FIREBASE_CONFIG = {
+    apiKey: "AIzaSyAb_MJxLqm9Glwh6wH1u3aBo2EWGnPJCVM",
+    authDomain: "xe12-ea614.firebaseapp.com",
+    projectId: "xe12-ea614",
+    storageBucket: "xe12-ea614.firebasestorage.app",
+    messagingSenderId: "1033207775495",
+    appId: "1:1033207775495:web:f775944fc0c9bd4f5985a2",
+    measurementId: "G-4LJ21NP95D"
+  };
+
   </script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
 
   <script>
     // ===== CONFIG =====
@@ -164,6 +168,7 @@
     let MODE = 'local', db=null;
     try { firebase.initializeApp(window.FIREBASE_CONFIG); db = firebase.firestore(); MODE = 'cloud'; }
     catch(e){ console.warn('Firebase init failed, fallback to local', e); }
+    try{ if(window.firebase && firebase.auth){ firebase.auth().signInAnonymously().catch(console.warn); } }catch(e){}
     const modeTagEl = document.getElementById('modeTag');
     if (modeTagEl) modeTagEl.textContent = `Chế độ: ${MODE==='cloud'?'Đám mây (Firestore)':'Cục bộ'}`;
 
