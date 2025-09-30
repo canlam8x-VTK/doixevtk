@@ -145,8 +145,6 @@
   <!-- SDK để lại y như gốc; nếu bị chặn vẫn chạy ở chế độ local -->
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
 
   <script>
     // ===== GUARDS: tránh trắng trang khi firebase bị chặn =====
@@ -288,6 +286,7 @@
       if (isOutNow(st)) { renderRow(name); return; }
       st.trips.push({goAt: nowIso, backAt: null});
       statusMap.set(name, st);
+      try { setLocalStatus(name, st); } catch(_) {}
       renderRow(name);
       if (MODE==='cloud' && db){ 
         try{
@@ -297,8 +296,6 @@
           data.push({goAt: nowIso, backAt: null});
           await ref.set({trips: data, updatedAt: firebase.firestore.FieldValue.serverTimestamp()});
         }catch(err){ console.warn('Cloud write error (go):', err); }
-      } else { 
-        setLocalStatus(name, st); 
       }
       refreshDriverTags();
     }
@@ -312,6 +309,7 @@
         st.trips.push({goAt: null, backAt: nowIso});
       }
       statusMap.set(name, st);
+      try { setLocalStatus(name, st); } catch(_) {}
       renderRow(name);
       if (MODE==='cloud' && db){ 
         try{
@@ -325,8 +323,6 @@
           }
           await ref.set({trips: data, updatedAt: firebase.firestore.FieldValue.serverTimestamp()});
         }catch(err){ console.warn('Cloud write error (back):', err); }
-      } else { 
-        setLocalStatus(name, st); 
       }
       refreshDriverTags();
     }
@@ -334,7 +330,7 @@
     function renderTable(){
       tbody.innerHTML = '';
       DRIVERS.forEach(name=>{
-        const st = MODE==='cloud' ? {trips: []} : getLocalStatus(name);
+        const st = getLocalStatus(name);
         statusMap.set(name, st);
         tbody.appendChild(buildRow(name));
       });
@@ -471,7 +467,7 @@
           const wrap = document.createElement('div'); 
           wrap.className = 'cell-wrap';
 
-          const data = MODE==='cloud' ? null : loadCellLocal(name, d);
+          const data = loadCellLocal(name, d);
 
           function buildHalf(title, v1, v2){
             const half = document.createElement('div'); half.className='cell-half';
@@ -487,11 +483,10 @@
 
           const saveAll = debounce(()=>{
             const payload = { am1: am1.textContent, am2: am2.textContent, pm1: pm1.textContent, pm2: pm2.textContent };
+            try { saveCellLocal(name, d, payload); } catch(_) {}
             if (MODE==='cloud' && db) {
               const ref = cellDoc(name, d);
               ref && ref.set({...payload, updatedAt: firebase.firestore.FieldValue.serverTimestamp()}, {merge:true}).catch(err=>console.warn('Cloud cell write error', err));
-            } else {
-              saveCellLocal(name, d, payload);
             }
           }, 300);
 
@@ -529,9 +524,9 @@
 
     // Week controls
     document.addEventListener('click', (e)=>{
-      if (e.target && e.target.id === 'prevWeek'){ monday.setDate(monday.getDate()-7); renderWeek(); refreshDriverTags(); renderWeekPhotos(); attachPhotosListener(); }
-      if (e.target && e.target.id === 'nextWeek'){ monday.setDate(monday.getDate()+7); renderWeek(); refreshDriverTags(); renderWeekPhotos(); attachPhotosListener(); }
-      if (e.target && e.target.id === 'thisWeek'){ monday = getMonday(new Date()); renderWeek(); refreshDriverTags(); renderWeekPhotos(); attachPhotosListener(); }
+      if (e.target && e.target.id === 'prevWeek'){ monday.setDate(monday.getDate()-7); renderWeek(); refreshDriverTags(); }
+      if (e.target && e.target.id === 'nextWeek'){ monday.setDate(monday.getDate()+7); renderWeek(); refreshDriverTags(); }
+      if (e.target && e.target.id === 'thisWeek'){ monday = getMonday(new Date()); renderWeek(); refreshDriverTags(); }
       if (e.target && e.target.id === 'exportWeekCsv'){
         (async () => {
           const rows = [["Ngay","Ten_lai_xe","Buoi","Dong1","Dong2"]];
@@ -540,18 +535,8 @@
             const dayStr = ymd(d);
             for (const name of DRIVERS){
               let am1='',am2='',pm1='',pm2='';
-              if (MODE!=='cloud' || !db){
-                const val = loadCellLocal(name,d) || {};
-                am1 = val.am1||''; am2 = val.am2||''; pm1 = val.pm1||''; pm2 = val.pm2||'';
-              } else {
-                try{
-                  const snap = await cellDoc(name, d).get();
-                  const val = snap && snap.exists ? snap.data() : {};
-                  am1 = val.am1||''; am2 = val.am2||''; pm1 = val.pm1||''; pm2 = val.pm2||'';
-                }catch(err){
-                  console.warn('Read cell error', name, dayStr, err);
-                }
-              }
+              const val = loadCellLocal(name,d) || {};
+              am1 = val.am1||''; am2 = val.am2||''; pm1 = val.pm1||''; pm2 = val.pm2||'';
               rows.push([dayStr, name, 'Sang', am1, am2]);
               rows.push([dayStr, name, 'Chieu', pm1, pm2]);
             }
@@ -573,193 +558,10 @@
       const dateStr = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()}`;
       const tEl = document.getElementById('now'); if (tEl) tEl.textContent = timeStr;
       const dEl = document.getElementById('today'); if (dEl) dEl.textContent = dateStr;
-      renderTable(); renderWeek(); attachCloudStatus(); renderWeekPhotos(); attachPhotosListener();
+      renderTable(); renderWeek(); attachCloudStatus();
       // Không thêm interval trùng; đã có tick() mỗi phút
     }
     window.addEventListener('load', init);
-
-// ===== BẢNG 3: Lịch công tác tuần (ảnh) — Storage + Firestore (UPLOAD DEBUG) =====
-let photosUnsub = null;
-function mondayKey(){ return ymd(monday); }
-function photosDoc(){ return (MODE==='cloud' && db) ? db.collection('weekphotos').doc(mondayKey()) : null; }
-function setPhotoStatus(t){ var el=document.getElementById('photoStatus'); if(el) el.textContent = 'Ảnh: ' + t; }
-function loadWeekPhotosLocal(){ try { return JSON.parse(localStorage.getItem(`weekphotos:${mondayKey()}`)||'[]'); } catch(_){ return []; } }
-function saveWeekPhotosLocal(arr){ try { localStorage.setItem(`weekphotos:${mondayKey()}`, JSON.stringify(arr||[])); } catch(_){ } }
-function makeSafeName(name){ return (name||'').replace(/[^\w.\-]+/g,'_').slice(-120); }
-
-async function ensureAnonAuth(){
-  if (!(firebase && firebase.auth)) return false;
-  try{ firebase.app(); }catch(_){ firebase.initializeApp(window.FIREBASE_CONFIG); }
-  try{
-    if (!firebase.auth().currentUser){
-      await firebase.auth().signInAnonymously();
-    }
-    return true;
-  }catch(e){
-    console.warn('Anon auth failed:', e);
-    return false;
-  }
-}
-
-function ensureCloudReady(){
-  return (MODE==='cloud' && typeof firebase !== 'undefined' && firebase.storage && firebase.firestore);
-}
-
-function renderWeekPhotosFromList(list){
-  const sun=new Date(monday); sun.setDate(sun.getDate()+6);
-  const wr3 = document.getElementById('weekRange3');
-  if (wr3) wr3.textContent = `${fmtDate(monday)} → ${fmtDate(sun)}`;
-  const grid = document.getElementById('photoGrid');
-  if (!grid) return;
-  grid.innerHTML = '';
-  const items = list || [];
-  setPhotoStatus(MODE==='cloud' ? (items.length + ' tấm (cloud)') : (items.length + ' tấm (cục bộ)'));
-  if (!items.length){
-    const empty = document.createElement('div');
-    empty.className = 'sub'; empty.style.gridColumn = '1 / -1';
-    empty.textContent = MODE==='cloud' ? 'Chưa có ảnh tuần này trên cloud.' : 'Cloud không khả dụng. Đang dùng lưu trữ cục bộ.';
-    grid.appendChild(empty);
-    return;
-  }
-  items.forEach((it, idx)=>{
-    const item = document.createElement('div'); item.className='photo-item';
-    const img = document.createElement('img'); img.src = it.url; img.alt = it.name || `Ảnh ${idx+1}`;
-    const del = document.createElement('button'); del.className='photo-del'; del.textContent='×'; del.title='Xóa ảnh này';
-    del.addEventListener('click', async ()=>{
-      try{
-        if (ensureCloudReady()){
-          if (it.path) await firebase.storage().ref(it.path).delete();
-          else if (it.url) await firebase.storage().refFromURL(it.url).delete();
-        }
-      }catch(err){ console.warn('Delete storage error:', err); alert('Xóa ảnh trên cloud lỗi: ' + (err && err.message || err)); }
-      try{
-        const ref = photosDoc();
-        if (ref){
-          const snap = await ref.get();
-          const data = snap.exists ? (snap.data().items||[]) : [];
-          data.splice(idx,1);
-          await ref.set({ items: data, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
-          saveWeekPhotosLocal(data);
-        } else {
-          const cur = loadWeekPhotosLocal(); cur.splice(idx,1); saveWeekPhotosLocal(cur);
-        }
-      }catch(err){ console.warn('Update photos list error:', err); alert('Cập nhật danh sách ảnh lỗi: ' + (err && err.message || err)); }
-      renderWeekPhotos();
-    });
-    const cap = document.createElement('div'); cap.className='photo-cap'; cap.textContent = it.name || `Ảnh ${idx+1}`;
-    item.appendChild(img); item.appendChild(del); item.appendChild(cap);
-    grid.appendChild(item);
-  });
-}
-
-function attachPhotosListener(){
-  if (photosUnsub){ try{ photosUnsub(); }catch(_){} photosUnsub = null; }
-  const ref = photosDoc();
-  if (!ref){ renderWeekPhotos(); return; }
-  photosUnsub = ref.onSnapshot(snap=>{
-    const list = snap.exists ? (snap.data().items || []) : [];
-    saveWeekPhotosLocal(list);
-    renderWeekPhotos();
-  }, err=>{
-    console.warn('Photos listener error:', err);
-    renderWeekPhotos();
-  });
-}
-
-function renderWeekPhotos(){
-  const list = loadWeekPhotosLocal();
-  renderWeekPhotosFromList(list);
-}
-
-// Upload & clear
-document.addEventListener('click', (e)=>{
-  if (e.target && e.target.id === 'btnUploadPhotos'){
-    const inp = document.getElementById('uploadWeekPhotos');
-    if (inp) inp.click();
-  }
-  if (e.target && e.target.id === 'btnClearPhotos'){
-    if (!confirm('Xóa TẤT CẢ ảnh tuần này? (Cloud & máy này)')) return;
-    (async ()=>{
-      await ensureAnonAuth();
-      try{
-        const cache = loadWeekPhotosLocal();
-        if (ensureCloudReady()){
-          for (const it of cache){
-            try{
-              if (it.path) await firebase.storage().ref(it.path).delete();
-              else if (it.url) await firebase.storage().refFromURL(it.url).delete();
-            }catch(err){ console.warn('Delete storage item error:', err); }
-          }
-        }
-        const ref = photosDoc();
-        if (ref){
-          await ref.set({ items: [], updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
-        }
-      }catch(err){ console.warn('Clear photos error:', err); alert('Xóa ảnh tuần lỗi: ' + (err && err.message || err)); }
-      saveWeekPhotosLocal([]);
-      renderWeekPhotos();
-    })();
-  }
-});
-
-document.addEventListener('change', (e)=>{
-  if (e.target && e.target.id === 'uploadWeekPhotos'){
-    const files = Array.from(e.target.files||[]);
-    e.target.value='';
-    if (!files.length) return;
-    (async ()=>{
-      const authed = await ensureAnonAuth();
-      if (ensureCloudReady() && authed && photosDoc()){
-        let snap, list;
-        try{
-          snap = await photosDoc().get();
-          list = snap.exists ? (snap.data().items||[]) : [];
-        }catch(err){ console.warn('Read photos doc error:', err); list = loadWeekPhotosLocal(); }
-        for (const f of files){
-          const safe = `${Date.now()}_${makeSafeName(f.name)}`;
-          const path = `weekphotos/${mondayKey()}/${safe}`;
-          try{
-            const ref = firebase.storage().ref(path);
-            const task = ref.put(f, { contentType: f.type || 'application/octet-stream' });
-            await new Promise((resolve, reject)=>{
-              task.on('state_changed', (snap)=>{
-                const pct = Math.round((snap.bytesTransferred / snap.totalBytes) * 100);
-                setPhotoStatus(`Đang tải "${f.name}" ${pct}%`);
-              }, (err)=>reject(err), async ()=>{
-                resolve();
-              });
-            });
-            const url = await ref.getDownloadURL();
-            list.push({ url, name: f.name, path, ts: Date.now() });
-          }catch(err){
-            console.warn('Upload error:', err);
-            alert('Upload thất bại cho "'+f.name+'": ' + (err && err.message || err));
-          }
-        }
-        try{
-          await photosDoc().set({ items: list, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
-        }catch(err){ console.warn('Write photos list error:', err); alert('Ghi danh sách ảnh lỗi: ' + (err && err.message || err)); }
-        saveWeekPhotosLocal(list);
-        renderWeekPhotos();
-        setPhotoStatus(`${list.length} tấm (cloud)`);
-      } else {
-        // Fallback: local cache (offline)
-        const readerJobs = files.map(f=> new Promise(res=>{
-          const fr = new FileReader();
-          fr.onload = ()=> res({url: fr.result, name: f.name, path: null, ts: Date.now()});
-          fr.readAsDataURL(f);
-        }));
-        const datas = await Promise.all(readerJobs);
-        const cur = loadWeekPhotosLocal();
-        saveWeekPhotosLocal(cur.concat(datas));
-        renderWeekPhotos();
-        setPhotoStatus(`${cur.length + datas.length} tấm (cục bộ)`);
-      }
-    })();
-  }
-});
-// END_BANG3
-
   </script>
 </body>
 </html>
