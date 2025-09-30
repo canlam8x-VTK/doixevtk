@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta http-equiv="Cache-Control" content="no-store" />
-  <title>Quáº£n lĂ½ cĂ´ng tĂ¡c lĂ¡i xe</title>
+  <title>Quản lý công tác lái xe</title>
   <style>
     :root{
       --bg:#1a0709;
@@ -57,23 +57,22 @@
     .cell-wrap{display:grid;grid-template-columns:1fr 1fr;gap:0;border-top:1px dashed rgba(255,213,79,.25)}
     .cell-half{padding:4px}
     .half-title{font-size:10.5px;color:var(--muted);margin:0 0 4px}
-    /* Ă” ghi chĂº: ban Ä‘áº§u nhá» gá»n, chá»‰ giĂ£n ngang khi nháº­p, khĂ´ng xuá»‘ng dĂ²ng */
     .line{
       border:1px dashed var(--line2);
       border-radius:6px;
       padding:2px 4px;
       min-height:24px;
-      min-width:40px;        /* nhá» hÆ¡n */
-      max-width:100px;       /* giá»›i háº¡n ban Ä‘áº§u Ä‘á»ƒ báº£ng gá»n */
-      width:fit-content;     /* giĂ£n theo ná»™i dung */
+      min-width:80px;
+      width:fit-content;
+      max-width:none;
       display:inline-block;
       background:rgba(0,0,0,.12);
       color:var(--ink);
       font-size:14.5px;
       line-height:1.5;
-      white-space:nowrap;    /* khĂ´ng xuá»‘ng dĂ²ng */
+      white-space:nowrap;
       word-break:keep-all;
-      overflow-x:auto;       /* chá»¯ dĂ i thĂ¬ kĂ©o ngang */
+      overflow-x:auto;
       overflow-y:hidden;
       -webkit-overflow-scrolling:touch;
     }
@@ -87,42 +86,42 @@
 </head>
 <body>
   <div class="wrap">
-    <h1>đŸ— Quáº£n lĂ½ cĂ´ng tĂ¡c lĂ¡i xe</h1>
-    <div class="sub">Báº£ng 2: Ă´ ghi chĂº ban Ä‘áº§u nhá» gá»n, khi Ä‘iá»n sáº½ giĂ£n ngang; má»—i Ă´ hiá»ƒn thá»‹ <b>TĂªn Ä‘/c / Thá»©</b> Ä‘Ăºng theo hĂ ng ngang (T2..CN).</div>
+    <h1>🚗 Quản lý công tác lái xe</h1>
+    <div class="sub">Bảng 2: ô ghi chú 1 dòng, tự giãn ngang; mỗi ô hiển thị <b>Tên đ/c / Thứ</b> đúng với hàng ngang (T2..CN).</div>
 
-    <!-- Báº¢NG 1 -->
+    <!-- BẢNG 1 -->
     <div class="card">
       <div class="toolbar">
-        <span class="tag">HĂ´m nay: <b id="today"></b></span>
-        <span class="tag clock">Giá»: <span id="now"></span></span>
-        <button id="resetDay" class="btn btn-muted">XĂ³a dá»¯ liá»‡u hĂ´m nay (mĂ¡y nĂ y)</button>
-        <button id="exportCsv" class="btn btn-muted">Xuáº¥t CSV hĂ´m nay</button>
-        <span class="right tag" id="modeTag">Cháº¿ Ä‘á»™: Cá»¥c bá»™</span>
+        <span class="tag">Hôm nay: <b id="today"></b></span>
+        <span class="tag clock">Giờ: <span id="now"></span></span>
+        <button id="resetDay" class="btn btn-muted">Xóa dữ liệu hôm nay (máy này)</button>
+        <button id="exportCsv" class="btn btn-muted">Xuất CSV hôm nay</button>
+        <span class="right tag" id="modeTag">Chế độ: Cục bộ</span>
       </div>
       <table>
         <thead>
           <tr>
-            <th>TĂªn lĂ¡i xe</th>
-            <th>Tráº¡ng thĂ¡i hoáº¡t Ä‘á»™ng xe</th>
-            <th class="hide-sm">Thá»i Ä‘iá»ƒm Ä‘i</th>
-            <th class="hide-sm">Thá»i Ä‘iá»ƒm vá»</th>
-            <th class="hide-sm">Thá»i gian Ä‘i cĂ´ng tĂ¡c</th>
-            <th>Thao tĂ¡c</th>
+            <th>Tên lái xe</th>
+            <th>Trạng thái hoạt động xe</th>
+            <th class="hide-sm">Thời điểm đi</th>
+            <th class="hide-sm">Thời điểm về</th>
+            <th class="hide-sm">Thời gian đi công tác</th>
+            <th>Thao tác</th>
           </tr>
         </thead>
         <tbody id="tbody"></tbody>
       </table>
     </div>
 
-    <!-- Báº¢NG 2 -->
+    <!-- BẢNG 2 -->
     <div class="card">
       <div class="toolbar">
-        <span class="tag">Tuáº§n: <b id="weekRange"></b></span>
-        <button id="prevWeek" class="btn btn-muted">â—€ Tuáº§n trÆ°á»›c</button>
-        <button id="thisWeek" class="btn btn-muted">Tuáº§n nĂ y</button>
-        <button id="nextWeek" class="btn btn-muted">Tuáº§n sau â–¶</button>
-        <button id="clearWeek" class="btn btn-muted">XĂ³a tráº¯ng tuáº§n (mĂ¡y nĂ y)</button>
-        <button id="exportWeekCsv" class="btn btn-muted">Xuáº¥t CSV tuáº§n</button>
+        <span class="tag">Tuần: <b id="weekRange"></b></span>
+        <button id="prevWeek" class="btn btn-muted">◀ Tuần trước</button>
+        <button id="thisWeek" class="btn btn-muted">Tuần này</button>
+        <button id="nextWeek" class="btn btn-muted">Tuần sau ▶</button>
+        <button id="clearWeek" class="btn btn-muted">Xóa trắng tuần (máy này)</button>
+        <button id="exportWeekCsv" class="btn btn-muted">Xuất CSV tuần</button>
       </div>
       <div class="scroll-x">
         <table class="week-grid" id="weekTable"></table>
@@ -147,7 +146,7 @@
 
   <script>
     // ===== CONFIG =====
-    const DRIVERS = ["Ä/c Luáº­n","Ä/c Hiá»n","Ä/c Tráº¡ch","Ä/c TĂ¹ng","Ä/c LĂª HĂ¹ng","Ä/c Nháº­t","Ä/c Ngá»c","Ä/c Chiáº¿n","Ä/c Thá»"];
+    const DRIVERS = ["Đ/c Luận","Đ/c Hiền","Đ/c Trạch","Đ/c Tùng","Đ/c Lê Hùng","Đ/c Nhật","Đ/c Ngọc","Đ/c Chiến","Đ/c Thọ"];
 
     // ===== UTILS =====
     const $ = (s,root=document)=>root.querySelector(s);
@@ -166,9 +165,9 @@
     try { firebase.initializeApp(window.FIREBASE_CONFIG); db = firebase.firestore(); MODE = 'cloud'; }
     catch(e){ console.warn('Firebase init failed, fallback to local', e); }
     const modeTagEl = document.getElementById('modeTag');
-    if (modeTagEl) modeTagEl.textContent = `Cháº¿ Ä‘á»™: ${MODE==='cloud'?'ÄĂ¡m mĂ¢y (Firestore)':'Cá»¥c bá»™'}`;
+    if (modeTagEl) modeTagEl.textContent = `Chế độ: ${MODE==='cloud'?'Đám mây (Firestore)':'Cục bộ'}`;
 
-    // ===== Báº¢NG 1 =====
+    // ===== BẢNG 1 =====
     const tbody = $('#tbody');
     const statusMap = new Map(); // name -> { trips: [{goAt, backAt}] }
 
@@ -200,14 +199,14 @@
       tr.dataset.id = id;
       tr.innerHTML = `
         <td><div class="row"><span class="dot" aria-hidden="true"></span><b class="driver"></b></div></td>
-        <td class="state">ChÆ°a Ä‘i</td>
+        <td class="state">Chưa đi</td>
         <td class="go-time hide-sm"><div class="col-list"></div></td>
         <td class="back-time hide-sm"><div class="col-list"></div></td>
         <td class="dur-time hide-sm"><div class="col-list"></div></td>
         <td>
           <div class="row">
-            <button class="btn btn-go act-go">Äi cĂ´ng tĂ¡c</button>
-            <button class="btn btn-back act-back">Vá» cĂ´ng ty</button>
+            <button class="btn btn-go act-go">Đi công tác</button>
+            <button class="btn btn-back act-back">Về công ty</button>
           </div>
         </td>`;
       $('.driver', tr).textContent = name;
@@ -233,7 +232,7 @@
       if(isOutNow(st)) dot.classList.add('going'); else dot.classList.add('backed');
 
       $('.driver', tr).textContent = name;
-      $('.state', tr).textContent = isOutNow(st) ? 'Äang Ä‘i cĂ´ng tĂ¡c' : (trips.length ? 'ÄĂ£ vá» cĂ´ng ty' : 'ChÆ°a Ä‘i');
+      $('.state', tr).textContent = isOutNow(st) ? 'Đang đi công tác' : (trips.length ? 'Đã về công ty' : 'Chưa đi');
 
       const goCol = $('.go-time .col-list', tr);
       const backCol = $('.back-time .col-list', tr);
@@ -246,9 +245,9 @@
         const goSpan = document.createElement('span');
         const backSpan = document.createElement('span');
         const durSpan = document.createElement('span');
-        goSpan.textContent = goAt ? fmtDateTime(goAt) : 'â€”';
-        backSpan.textContent = backAt ? fmtDateTime(backAt) : 'â€”';
-        durSpan.textContent = goAt ? calcDuration(goAt, backAt || new Date()) : 'â€”';
+        goSpan.textContent = goAt ? fmtDateTime(goAt) : '—';
+        backSpan.textContent = backAt ? fmtDateTime(backAt) : '—';
+        durSpan.textContent = goAt ? calcDuration(goAt, backAt || new Date()) : '—';
         goCol.appendChild(goSpan);
         backCol.appendChild(backSpan);
         durCol.appendChild(durSpan);
@@ -360,7 +359,7 @@
 
     $('#exportCsv').addEventListener('click', exportTodayCsv);
     $('#resetDay').addEventListener('click', ()=>{
-      if (!confirm('XoĂ¡ dá»¯ liá»‡u hĂ´m nay trĂªn THIáº¾T Bá» NĂ€Y?')) return;
+      if (!confirm('Xoá dữ liệu hôm nay trên THIẾT BỊ NÀY?')) return;
       Object.keys(localStorage).forEach(k=>{ if(k.startsWith(`status:${todayKey()}:`)) localStorage.removeItem(k); });
       renderTable();
       refreshDriverTags();
@@ -376,7 +375,7 @@
 
     function statusColor(name){
       const st = statusMap.get(name) || {trips: []};
-      return (st.trips.length && st.trips[trips.length-1].goAt && !st.trips[st.trips.length-1].backAt) ? 'red' : 'green';
+      return (st.trips.length && st.trips[st.trips.length-1].goAt && !st.trips[st.trips.length-1].backAt) ? 'red' : 'green';
     }
     function refreshDriverTags(){
       $$('.driver-tag').forEach(tag=>{
@@ -386,9 +385,9 @@
       });
     }
 
-    // ===== Báº¢NG 2 =====
+    // ===== BẢNG 2 =====
     const weekTable = $('#weekTable');
-    const DAYS = ['Thá»© 2','Thá»© 3','Thá»© 4','Thá»© 5','Thá»© 6','Thá»© 7','Chá»§ nháº­t'];
+    const DAYS = ['Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7','Chủ nhật'];
     const DAYS_SHORT = ['T2','T3','T4','T5','T6','T7','CN'];
     function getMonday(d){ const t=new Date(d); const w=(t.getDay()+6)%7; t.setDate(t.getDate()-w); t.setHours(0,0,0,0); return t; }
     let monday = getMonday(new Date());
@@ -410,12 +409,12 @@
     function renderWeek(){
       weekTable.innerHTML='';
       const sun=new Date(monday); sun.setDate(sun.getDate()+6);
-      document.getElementById('weekRange').textContent = `${fmtDate(monday)} â†’ ${fmtDate(sun)}`;
+      document.getElementById('weekRange').textContent = `${fmtDate(monday)} → ${fmtDate(sun)}`;
 
-      // header: chá»‰ tĂªn lĂ¡i xe
+      // header: chỉ tên lái xe
       const thead = document.createElement('thead');
       const htr = document.createElement('tr');
-      const th0 = document.createElement('th'); th0.textContent='NgĂ y'; htr.appendChild(th0);
+      const th0 = document.createElement('th'); th0.textContent='Ngày'; htr.appendChild(th0);
       DRIVERS.forEach(n=>{ const th=document.createElement('th'); th.textContent = n; htr.appendChild(th); });
       thead.appendChild(htr); weekTable.appendChild(thead);
 
@@ -432,7 +431,7 @@
           const td = document.createElement('td');
           td.className = `day-cell ${isToday?'today':(isPast?'past':'')}`;
 
-          // TĂªn lĂ¡i xe + "/ Tn" KHá»P Vá»I HĂ€NG NGANG
+          // Tên lái xe + "/ Tn" KHỚP VỚI HÀNG NGANG
           const driverTag = document.createElement('div');
           driverTag.className = `driver-tag ${statusColor(name)}`;
           driverTag.setAttribute('data-name', name);
@@ -452,8 +451,8 @@
             return {half, l1, l2};
           }
 
-          const {half:am, l1:am1, l2:am2} = buildHalf('SĂ¡ng', data?.am1, data?.am2);
-          const {half:pm, l1:pm1, l2:pm2} = buildHalf('Chiá»u', data?.pm1, data?.pm2);
+          const {half:am, l1:am1, l2:am2} = buildHalf('Sáng', data?.am1, data?.am2);
+          const {half:pm, l1:pm1, l2:pm2} = buildHalf('Chiều', data?.pm1, data?.pm2);
           wrap.appendChild(am); wrap.appendChild(pm); td.appendChild(wrap); tr.appendChild(td);
 
           const saveAll = debounce(()=>{
@@ -462,7 +461,7 @@
             else saveCellLocal(name, d, payload);
           }, 300);
 
-          // Ghi chĂº: KHĂ”NG xuá»‘ng dĂ²ng ná»¯a, cháº·n Enter
+          // Ghi chú: KHÔNG xuống dòng nữa, chặn Enter
           [am1,am2,pm1,pm2].forEach(el=>{
             el._composing = false;
             el.addEventListener('compositionstart', ()=> el._composing = true);
@@ -498,7 +497,7 @@
       if (e.target && e.target.id === 'nextWeek'){ monday.setDate(monday.getDate()+7); renderWeek(); refreshDriverTags(); }
       if (e.target && e.target.id === 'thisWeek'){ monday = getMonday(new Date()); renderWeek(); refreshDriverTags(); }
       if (e.target && e.target.id === 'clearWeek'){
-        if (!confirm('XĂ³a ghi chĂº tuáº§n nĂ y trĂªn THIáº¾T Bá» NĂ€Y?')) return;
+        if (!confirm('Xóa ghi chú tuần này trên THIẾT BỊ NÀY?')) return;
         const prefix = `week:${ymd(monday)}:`;
         Object.keys(localStorage).forEach(k=>{ if (k.startsWith(prefix)) localStorage.removeItem(k); });
         renderWeek(); refreshDriverTags();
